@@ -59,6 +59,9 @@ var renamedFolder = Path.Combine(root, "versions", "renamed");
 Directory.CreateDirectory(renamedFolder);
 File.WriteAllText(Path.Combine(renamedFolder, "renamed.json"), """{"id":"renamed","clientVersion":"1.21.1","type":"release"}""");
 Check(PclIntegration.Discover(root, pcl).Single(i => i.Id == "renamed").GameVersion == "1.21.1", "renamed PCL instance preserves actual game version");
+var hmclFlag = Array.IndexOf(args, "--hmcl-exe");
+LauncherChecks.Run(Path.Combine(testRoot, "launchers"), Check, Reject,
+    hmclFlag >= 0 && hmclFlag + 1 < args.Length ? Path.GetFullPath(args[hmclFlag + 1]) : null);
 using var network = new Network { Source = SourceMode.Auto };
 Check(network.Candidates("https://resources.download.minecraft.net/aa/hash").Count() == 2, "automatic source has official fallback");
 network.Source = SourceMode.Bmclapi;

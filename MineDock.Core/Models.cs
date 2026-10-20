@@ -1,16 +1,22 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace MineDock.Core;
 
 public enum SourceMode { Auto, Official, Bmclapi }
 public enum PageKind { Game, Modpack, Mod, Shader, Resourcepack, Java, Tasks }
 public enum FileAction { Download, Text, ExtractJava }
+public enum LauncherKind { Pcl, Hmcl }
 
 public sealed class Settings
 {
     public string MinecraftRoot { get; set; } = "";
     public string PclExecutable { get; set; } = "";
+    public string HmclExecutable { get; set; } = "";
+    public LauncherKind Launcher { get; set; }
+    [JsonIgnore] public string LauncherExecutable => Launcher == LauncherKind.Hmcl ? HmclExecutable : PclExecutable;
+    [JsonIgnore] public string LauncherName => Launcher == LauncherKind.Hmcl ? "HMCL" : "PCL";
     public string SelectedInstance { get; set; } = "";
     public SourceMode Source { get; set; }
     public string Theme { get; set; } = "System";

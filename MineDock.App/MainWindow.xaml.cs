@@ -11,6 +11,8 @@ using System.Windows.Data;
 using System.Windows.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Animation;
+using System.Globalization;
 using Microsoft.Win32;
 using MineDock.Core;
 
@@ -33,7 +35,8 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _operation;
     private CancellationTokenSource? _search;
     private bool _ready, _suppress;
-    private int _offset, _gameSelection, _projectSelection, _navigation;
+    private int _gameSelection, _projectSelection, _navigation;
+    private CatalogState? _activeCatalogSearch;
     public MainWindow()
     {
         Vm = new(Settings.Load());
@@ -98,7 +101,7 @@ public partial class MainWindow : Window
     {
         var selectedId = preferred ?? Vm.Target?.Id ?? Vm.Settings.SelectedInstance;
         Vm.Instances.Clear();
-        foreach (var instance in PclIntegration.Discover(Vm.Settings.MinecraftRoot, Vm.Settings.PclExecutable))
+        foreach (var instance in LauncherIntegration.Discover(Vm.Settings))
             Vm.Instances.Add(instance);
         Vm.Target = Vm.Instances.FirstOrDefault(i => i.Id == selectedId) ?? Vm.Instances.FirstOrDefault();
         Vm.Changed(nameof(Vm.TargetDirectory));
@@ -108,30 +111,48 @@ public partial class MainWindow : Window
         if (Vm.Running || Vm.Preparing) return;
         var dialog = new OpenFolderDialog { Title = "选择目标 .minecraft 文件夹", InitialDirectory = Vm.Settings.MinecraftRoot };
         if (dialog.ShowDialog(this) != true) return;
+        ClearPendingPlan();
         Vm.Settings.MinecraftRoot = dialog.FolderName;
         Vm.RefreshSettings(); LoadInstances(); FilterGames();
     }
-    private void AssociatePcl(object sender, RoutedEventArgs e)
+    private async void AssociateLauncher(object sender, RoutedEventArgs e)
     {
         if (!Vm.CanPrepare) return;
-        var dialog = new OpenFileDialog { Title = "关联 PCL 启动器", Filter = "PCL 启动器 (*.exe)|*.exe" };
+        var dialog = new OpenFileDialog
+        {
+            Title = "关联 PCL 或 HMCL 启动器",
+            Filter = "PCL / HMCL 启动器 (*.exe;*.jar)|*.exe;*.jar|可执行文件 (*.exe)|*.exe|Java 启动器 (*.jar)|*.jar"
+        };
         if (dialog.ShowDialog(this) != true) return;
-        var info = FileVersionInfo.GetVersionInfo(dialog.FileName);
-        if ((info.FileDescription ?? "").Contains("Kingsoft", StringComparison.OrdinalIgnoreCase) ||
-            (info.ProductName ?? "").Contains("Internet Security", StringComparison.OrdinalIgnoreCase))
+        await Guard(() =>
         {
-            Vm.Error = "所选文件的产品信息是金山安全安装程序，请选择实际的 PCL 启动器。";
-            return;
-        }
-        var identity = (info.FileDescription ?? "") + " " + (info.ProductName ?? "");
-        if (!identity.Contains("Plain Craft Launcher", StringComparison.OrdinalIgnoreCase) &&
-            !identity.Contains("PCL", StringComparison.OrdinalIgnoreCase))
-        {
-            Vm.Error = "所选程序的产品信息无法识别为 PCL，请选择实际的 PCL 可执行文件。";
-            return;
-        }
-        Vm.Settings.PclExecutable = dialog.FileName;
+            ApplyLauncher(dialog.FileName, LauncherIntegration.Identify(dialog.FileName));
+            if (Vm.Settings.MinecraftRoot.Length == 0) ChooseRoot(sender, e);
+            return Task.CompletedTask;
+        });
+    }
+    private void ApplyLauncher(string executable, LauncherKind launcher)
+    {
+        if (!Vm.CanPrepare) return;
+        var root = LauncherIntegration.FindMinecraftRoot(executable, launcher);
+        ClearPendingPlan();
+        Vm.Settings.Launcher = launcher;
+        if (launcher == LauncherKind.Hmcl) Vm.Settings.HmclExecutable = executable;
+        else Vm.Settings.PclExecutable = executable;
+        Vm.Settings.MinecraftRoot = root ?? "";
+        Vm.Settings.SelectedInstance = "";
+        Vm.Target = null;
         Vm.RefreshSettings(); LoadInstances();
+        FilterGames();
+        Vm.Status = root is null ? $"{Vm.Settings.LauncherName} 已关联，请选择游戏目录"
+            : $"已关联 {Vm.Settings.LauncherName} · 已自动选择游戏目录";
+    }
+    private void ClearPendingPlan()
+    {
+        _plan = null;
+        Vm.ShowPlan = false;
+        Vm.PlanFiles.Clear();
+        Vm.PlanDetails.Clear();
     }
     private void RefreshInstances(object sender, RoutedEventArgs e) { LoadInstances(); FilterGames(); }
     private void TargetChanged(object sender, SelectionChangedEventArgs e)
@@ -166,6 +187,8 @@ public partial class MainWindow : Window
         Vm.SelectedProject = null;
         Vm.ProjectVersions.Clear();
         Vm.Projects.Clear();
+        Vm.SetCatalogPage(0, 0);
+        _activeCatalogSearch = null;
         _suppress = false;
         if (Vm.IsGame) { FilterGames(); await UpdateGameSelection(); }
         else if (Vm.IsCatalog)
@@ -187,7 +210,7 @@ public partial class MainWindow : Window
                     Vm.FilterLoader = next is PageKind.Mod or PageKind.Modpack && Vm.Target?.Loader is { } l && l != "vanilla" ? l : "";
                     Vm.Sort = "downloads";
                 }
-                _offset = 0; await Search();
+                await Search();
             });
         }
         else if (Vm.IsJava) await LoadJava();
@@ -241,16 +264,32 @@ public partial class MainWindow : Window
         "locale" => "语言", "models" => "模型", "fonts" => "字体", "core-shaders" => "核心着色器", "sky" => "天空",
         _ => tag
     };
-    private async Task Search()
+    private async Task Search(int requestedPage = 1)
     {
         _search?.Cancel(); _search?.Dispose(); _search = new();
-        var token = _search.Token;
+        var request = _search;
+        var token = request.Token;
         var page = Vm.Page;
+        var projectType = Vm.ProjectType;
+        var criteria = new CatalogState(Vm.Query.Trim(), Vm.FilterGame, Vm.FilterLoader, Vm.FilterCategory,
+            Vm.FilterFeature, Vm.FilterExtra, Vm.Sort);
+        var targetPage = criteria == _activeCatalogSearch ? Math.Max(1, requestedPage) : 1;
+        Vm.PageError = "";
         Vm.Loading = true;
         try
         {
-            var result = await _content.Search(Vm.ProjectType, Vm.Query.Trim(), Vm.FilterGame, Vm.FilterLoader,
-                Vm.FilterCategory, Vm.Sort, _offset, token, Vm.FilterFeature, Vm.FilterExtra);
+            Task<(List<SearchProject> Projects, int Total)> Fetch(int number) => _content.Search(projectType,
+                criteria.Query, criteria.Game, criteria.Loader, criteria.Category, criteria.Sort,
+                checked((number - 1) * ContentService.SearchPageSize), token, criteria.Feature, criteria.Extra);
+            var result = await Fetch(targetPage);
+            var lastPage = (int)(((long)result.Total + ContentService.SearchPageSize - 1) / ContentService.SearchPageSize);
+            if (lastPage > 0 && targetPage > lastPage)
+            {
+                targetPage = lastPage;
+                result = await Fetch(targetPage);
+                if ((long)(targetPage - 1) * ContentService.SearchPageSize >= result.Total && result.Total > 0)
+                    throw new InvalidOperationException("搜索结果正在变化，请刷新后重试。");
+            }
             if (token.IsCancellationRequested || Vm.Page != page) return;
             Vm.Projects.Clear(); Vm.ProjectVersions.Clear(); Vm.SelectedProject = null;
             foreach (var project in result.Projects)
@@ -259,22 +298,54 @@ public partial class MainWindow : Window
                 Vm.Projects.Add(row);
                 _ = LoadProjectIcon(row, token);
             }
-            Vm.HasNext = _offset + result.Projects.Count < result.Total;
-            Vm.Status = result.Total == 0 ? "没有匹配结果" : $"{result.Total:N0} 个项目 · 第 {_offset / 30 + 1} 页";
+            _activeCatalogSearch = criteria;
+            Vm.SetCatalogPage(targetPage, result.Total);
+            Vm.Status = result.Total == 0 ? "没有匹配结果" : $"{result.Total:N0} 个项目 · 第 {Vm.CurrentPage:N0} / {Vm.TotalPages:N0} 页";
             Vm.SelectedProject = Vm.Projects.FirstOrDefault();
+            if (Vm.SelectedProject is not null) ProjectList.ScrollIntoView(Vm.SelectedProject);
+            if (SystemParameters.ClientAreaAnimation)
+                CatalogResults.BeginAnimation(OpacityProperty, new DoubleAnimation(0.55, 1, TimeSpan.FromMilliseconds(140)));
         }
-        finally { if (!token.IsCancellationRequested) Vm.Loading = false; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch
+        {
+            if (ReferenceEquals(_search, request) && Vm.Page == page) Vm.RestorePageInput();
+            throw;
+        }
+        finally { if (ReferenceEquals(_search, request) && !token.IsCancellationRequested) Vm.Loading = false; }
     }
     private static async Task LoadProjectIcon(ProjectRow row, CancellationToken ct)
     {
         var image = await ProjectIcons.Load(row.IconUrl, ct);
         if (!ct.IsCancellationRequested) row.Icon = image;
     }
-    private async void SearchCatalog(object sender, RoutedEventArgs e) { _offset = 0; await Guard(Search); }
+    private async void SearchCatalog(object sender, RoutedEventArgs e) => await Guard(() => Search());
     private async void SearchKeyDown(object sender, KeyEventArgs e)
-    { if (e.Key == Key.Enter && !Vm.Loading) { _offset = 0; await Guard(Search); } }
-    private async void NextPage(object sender, RoutedEventArgs e) { if (!Vm.Loading && Vm.HasNext) { _offset += 30; await Guard(Search); } }
-    private async void PreviousPage(object sender, RoutedEventArgs e) { if (!Vm.Loading && _offset > 0) { _offset -= 30; await Guard(Search); } }
+    { if (e.Key == Key.Enter && !Vm.Loading) { e.Handled = true; await Guard(() => Search()); } }
+    private async void NextPage(object sender, RoutedEventArgs e)
+    { if (Vm.CanNextPage) await Guard(() => Search(Vm.CurrentPage + 1)); }
+    private async void PreviousPage(object sender, RoutedEventArgs e)
+    { if (Vm.CanPreviousPage) await Guard(() => Search(Vm.CurrentPage - 1)); }
+    private async void JumpToPage(object sender, RoutedEventArgs e) => await JumpToPage();
+    private async Task JumpToPage()
+    {
+        if (!Vm.CanJumpPage) return;
+        if (!int.TryParse(Vm.PageInput.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var number) ||
+            number < 1 || number > Vm.TotalPages)
+        {
+            Vm.PageError = $"请输入 1 至 {Vm.TotalPages:N0} 的页码";
+            PageNumberBox.Focus(); PageNumberBox.SelectAll();
+            return;
+        }
+        if (number == Vm.CurrentPage) { Vm.RestorePageInput(); return; }
+        await Guard(() => Search(number));
+    }
+    private async void PageNumberKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) { e.Handled = true; await JumpToPage(); }
+        else if (e.Key == Key.Escape) { e.Handled = true; Vm.RestorePageInput(); }
+    }
+    private void PageNumberFocused(object sender, KeyboardFocusChangedEventArgs e) => PageNumberBox.SelectAll();
     private async void ProjectSelected(object sender, SelectionChangedEventArgs e)
     {
         if (!_ready || _suppress) return;
@@ -337,7 +408,7 @@ public partial class MainWindow : Window
         _plan = plan;
         plan.Details.RemoveAll(d => d.StartsWith("来源模式：", StringComparison.Ordinal));
         plan.Details.Add($"来源模式：{Vm.SourceChoices.First(c => c.Value == Vm.SourceValue).Label}");
-        plan.Details.Add("确认前请结束目标游戏及 PCL 中对同一目录执行的安装任务。");
+        plan.Details.Add("确认前请结束目标游戏及启动器中对同一目录执行的安装任务。");
         Vm.PlanTitle = plan.Title;
         Vm.PlanSummary = $"{plan.Files.Count:N0} 个文件 · {JsonTools.Size(plan.Bytes)} · {plan.Conflicts} 个已有文件";
         Vm.PlanDetails.Clear(); Vm.PlanFiles.Clear();
@@ -358,7 +429,7 @@ public partial class MainWindow : Window
             var plan = await _games.Plan(root, game.Id, loader, id);
             if (loader is not null && Vm.FabricApi)
             {
-                var directory = PclIntegration.Resolve(root, id, Vm.Settings.PclExecutable, "fabric");
+                var directory = LauncherIntegration.Resolve(Vm.Settings, id, "fabric");
                 if (directory.Error is not null) throw new InvalidOperationException(directory.Error);
                 var target = new Instance(id, game.Id, "fabric", directory.Directory, directory.Isolated, null);
                 var api = (await _content.Versions("fabric-api", game.Id, "fabric")).FirstOrDefault(v => v.VersionType == "release")
@@ -562,7 +633,7 @@ public partial class MainWindow : Window
     private async void RefreshPage(object sender, RoutedEventArgs e)
     {
         if (Vm.IsGame) { _games.Invalidate(); await LoadGameList(); }
-        else if (Vm.IsCatalog) { _offset = 0; await Guard(Search); }
+        else if (Vm.IsCatalog) await Guard(() => Search());
         else if (Vm.IsJava) await LoadJava();
         else RefreshHistory();
     }

@@ -114,16 +114,53 @@ public class MainViewModel : Observable
     public string PageIcon => Page switch { PageKind.Game => "blocks", PageKind.Modpack => "package", PageKind.Mod => "puzzle", PageKind.Shader => "sparkles", PageKind.Resourcepack => "image", PageKind.Java => "coffee", _ => "download" };
     public string PageEyebrow => IsCatalog ? "MODRINTH" : IsJava ? "ECLIPSE TEMURIN" : IsTasks ? "ACTIVITY" : "MINECRAFT JAVA EDITION";
     public string RootLabel => Settings.MinecraftRoot.Length == 0 ? "未选择 .minecraft" : Settings.MinecraftRoot;
-    public string PclLabel => Settings.PclExecutable.Length == 0 ? "关联 PCL" : "PCL 已关联";
-    public string PclTooltip => Settings.PclExecutable.Length == 0 ? "关联 PCL.exe，读取启动器隔离设置" : Settings.PclExecutable;
+    public string LauncherLabel => Settings.LauncherExecutable.Length == 0 ? "关联启动器" : Settings.LauncherName + " 已关联";
+    public string LauncherTooltip => Settings.LauncherExecutable.Length == 0
+        ? "关联 PCL 或 HMCL，自动选择游戏目录" : Settings.LauncherExecutable + "\n点击更换 PCL / HMCL";
     public string SourceValue { get => Settings.Source.ToString(); set { if (Enum.TryParse<SourceMode>(value, out var v)) { Settings.Source = v; Changed(); } } }
-    private bool _loading, _preparing, _running, _showPlan, _hasNext;
-    public bool Loading { get => _loading; set => Set(ref _loading, value); }
+    private bool _loading, _preparing, _running, _showPlan;
+    public bool Loading
+    {
+        get => _loading;
+        set { if (Set(ref _loading, value)) RefreshPagination(); }
+    }
     public bool Preparing { get => _preparing; set { if (Set(ref _preparing, value)) Changed(nameof(CanPrepare)); } }
     public bool Running { get => _running; set { if (Set(ref _running, value)) Changed(nameof(CanPrepare)); } }
     public bool CanPrepare => !Preparing && !Running;
     public bool ShowPlan { get => _showPlan; set => Set(ref _showPlan, value); }
-    public bool HasNext { get => _hasNext; set => Set(ref _hasNext, value); }
+    public int CurrentPage { get; private set; }
+    public int TotalProjects { get; private set; }
+    public int TotalPages => (int)(((long)TotalProjects + ContentService.SearchPageSize - 1) / ContentService.SearchPageSize);
+    public bool CanPreviousPage => !Loading && CurrentPage > 1;
+    public bool CanNextPage => !Loading && CurrentPage > 0 && CurrentPage < TotalPages;
+    public bool CanJumpPage => !Loading && TotalPages > 0;
+    public string ResultCountLabel => $"{TotalProjects:N0} 个项目";
+    public string PageCountLabel => $"/ {TotalPages:N0} 页";
+    private string _pageInput = "0", _pageError = "";
+    public string PageInput
+    {
+        get => _pageInput;
+        set { if (Set(ref _pageInput, value)) PageError = ""; }
+    }
+    public string PageError { get => _pageError; set => Set(ref _pageError, value); }
+    public void SetCatalogPage(int page, int total)
+    {
+        TotalProjects = Math.Max(0, total);
+        CurrentPage = TotalPages == 0 ? 0 : Math.Clamp(page, 1, TotalPages);
+        RestorePageInput();
+        Changed(nameof(CurrentPage)); Changed(nameof(TotalProjects)); Changed(nameof(TotalPages));
+        Changed(nameof(ResultCountLabel)); Changed(nameof(PageCountLabel));
+        RefreshPagination();
+    }
+    public void RestorePageInput()
+    {
+        PageInput = CurrentPage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        PageError = "";
+    }
+    private void RefreshPagination()
+    {
+        Changed(nameof(CanPreviousPage)); Changed(nameof(CanNextPage)); Changed(nameof(CanJumpPage));
+    }
     private string _status = "正在连接版本服务", _error = "", _query = "", _gameLoader = "vanilla", _installed = "", _newId = "", _javaRequirement = "—";
     public string Status { get => _status; set => Set(ref _status, value); }
     public string Error { get => _error; set { if (Set(ref _error, value)) Changed(nameof(HasError)); } }

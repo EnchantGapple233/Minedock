@@ -106,7 +106,7 @@ public sealed class GameService(Network network)
             var installed = JsonNode.Parse(await File.ReadAllTextAsync(baseJson, ct));
             foreach (var key in new[] { "mainClass", "libraries", "arguments", "minecraftArguments", "inheritsFrom" })
                 if (!JsonNode.DeepEquals(installed?[key], metadata[key]))
-                    throw new InvalidOperationException($"基础版本 {baseId} 的启动配置已被修改，请先在 PCL 中处理该版本，避免覆盖已有修改。");
+                    throw new InvalidOperationException($"基础版本 {baseId} 的启动配置已被修改，请先在启动器中处理该版本，避免覆盖已有修改。");
         }
         plan.Add(new() { Action = FileAction.Text, Destination = baseJson, Text = metadata.ToJsonString(JsonTools.Options), Label = "游戏版本配置" });
         AddDownload(plan, metadata["downloads"]!["client"]!, Path.Combine(baseDirectory, jarName + ".jar"), "Minecraft 客户端");
@@ -153,7 +153,7 @@ public sealed class GameService(Network network)
         plan.Details.Add($"游戏：{game} · {(loader is null ? "原版" : "Fabric " + loader)}");
         var requiredJava = metadata["javaVersion"]?.Num("majorVersion") ?? 8;
         plan.Details.Add($"Java 要求：{requiredJava}");
-        plan.Details.Add("安装游戏本体、支持库及完整资源；PCL 配置保持由 PCL 管理。");
+        plan.Details.Add("安装游戏本体、支持库及完整资源；启动器配置保持由启动器管理。");
         return plan;
     }
 }

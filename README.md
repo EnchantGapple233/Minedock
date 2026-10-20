@@ -8,10 +8,10 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 
 ## 下载
 
-当前版本：**v0.1.1**。
+当前版本：**v0.1.2**。
 
-- [Windows x64 便携版](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.1/MineDock-0.1.1-win-x64.zip)
-- [版本说明与校验文件](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.1)
+- [Windows x64 便携版](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.2/MineDock-0.1.2-win-x64.zip)
+- [版本说明与校验文件](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.2)
 - [全部版本](https://github.com/EnchantGapple233/Minedock/releases)
 
 解压后运行 `MineDock.exe`，无需额外安装 .NET。程序面向 Windows 10 / 11 x64，目前只在 Windows 11 x64 实机验证。
@@ -25,23 +25,35 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 - 安装模组和材质包；为 Fabric 光影生成包含 Iris 及声明依赖的安装计划。
 - 下载整合包原始文件。
 - 安装 Eclipse Temurin Windows x64 JRE / JDK，支持选择主版本和多版本独立目录。
-- 读取 PCL 的版本隔离设置，将资源写入对应实例目录。
+- 关联 PCL 或 HMCL 后自动选择游戏目录，读取启动器的隔离与自定义运行目录设置，将资源写入对应位置。
 - 下载缓存、大文件分段与断点续传、取消和重试、任务记录、哈希校验、安装失败回滚及中断恢复。
 - 明暗主题、中文界面、栏目独立筛选和安装计划面板。
 - 自定义背景图片，支持 PNG、JPEG、WebP、BMP，可调整背景强度、选择填充或适应，并恢复默认。
+- Modrinth 当前页与总页数显示、对称的翻页按钮、指定页跳转，以及无效输入、加载与失败状态处理。
+- 更清晰的页码、选中项上浮与柔和阴影、悬停和按下反馈，以及键盘焦点提示。
 
-![MineDock 界面示例，v0.1.0](docs/images/catalog.png)
+![MineDock 分页界面，v0.1.2](docs/images/pagination-dark.png)
 
 ## 使用
 
-1. 选择目标 `.minecraft` 文件夹，按需关联实际的 PCL 可执行文件。
+1. 点击「关联启动器」，选择实际的 PCL.exe、HMCL.exe 或 HMCL.jar。程序优先读取已配置的游戏目录，否则识别启动器旁的 `.minecraft`；未找到时可手动选择。
 2. 安装游戏时选择 Minecraft 和 Fabric 版本；添加资源时选择已安装的游戏实例。
 3. 搜索并筛选内容，创建安装计划，检查文件、依赖、下载大小和目标位置后确认执行。
-4. 使用 PCL 完成账号登录、游戏启动、隔离设置和已有模组管理。
+4. 使用 PCL 或 HMCL 完成账号登录、游戏启动、隔离设置和已有模组管理。
 
-向目标目录安装内容时，应先结束对应游戏，以及 PCL 中对同一目录执行的安装任务。MineDock 只读 PCL 配置，无法确认隔离策略时会停止资源安装。
+向目标目录安装内容时，应先结束对应游戏，以及启动器中对同一目录执行的安装任务。MineDock 只读启动器配置，无法确认资源目录时会停止安装。更换启动器或游戏目录会清除原待安装计划。
 
-Java 默认安装到 `%APPDATA%\.minecraft\runtime\MineDock`。安装后可在 PCL 中搜索 Java，或手动导入对应版本的 `bin\java.exe`。程序不会修改 `PATH` 或 `JAVA_HOME`。
+Java 默认安装到 `%APPDATA%\.minecraft\runtime\MineDock`。安装后可在 PCL / HMCL 中搜索 Java，或手动导入对应版本的 `bin\java.exe`。程序不会修改 `PATH` 或 `JAVA_HOME`。
+
+### 启动器兼容
+
+保留已有 PCL 关联设置，支持 PCL 的便携目录写法。HMCL 同时支持旧版 `hmclversion.cfg` / `hmcl.json`，以及 3.16 系列的目录列表、游戏设置预设与实例运行目录。配置存在歧义、损坏或不支持的版本时会提示，保留「仅下载」。
+
+默认按启动器所在文件夹解析相对路径；HMCL 使用环境变量指定配置位置时也会读取。通过快捷方式或脚本指定了其他工作目录或 JVM 配置路径的特殊启动方式，需要先核对实际目录。详情见[启动器兼容说明](docs/LAUNCHER-COMPATIBILITY.md)。
+
+### 分页与跳转
+
+搜索结果下方显示总项目数、当前页和总页数。使用左右箭头翻页；编辑页码后按 Enter 或点击跳转图标，按 Esc 可恢复当前页码。首页、末页、加载中和空结果时会禁用不可用操作。无效页码在分页区提示，网络失败时保留已有结果与页码。用新条件执行搜索时从第一页开始。
 
 ### 自定义背景
 
@@ -80,10 +92,13 @@ Java 默认安装到 `%APPDATA%\.minecraft\runtime\MineDock`。安装后可在 P
 ```powershell
 dotnet build MineDock.slnx -c Release
 dotnet run --project .\MineDock.Checks\MineDock.Checks.csproj -c Release -- .\check-output
+dotnet run --project .\MineDock.UiChecks\MineDock.UiChecks.csproj -c Release -- .\check-output-ui
 dotnet publish .\MineDock.App\MineDock.App.csproj -c Release -r win-x64 --self-contained true -o .\artifacts\publish
 ```
 
 在线检查可在检查命令最后加 `--live`；`--live --install` 会下载约 1 GB，并在指定测试目录实际安装 Minecraft 1.21.1、Fabric、Fabric API 和 Java 21。`--live --mirror` 可单独检查 BMCLAPI。
+
+`MineDock.UiChecks` 在独立应用数据目录运行实际 WPF 分页、文字边界、选中反馈和启动器关联检查；加 `--live` 可验证四个 Modrinth 栏目的真实翻页与末页访问，并生成明暗主题及最小窗口截图。
 
 诊断截图：`MineDock.exe --capture <绝对输出目录>`。可设置 `MINEDOCK_DATA` 环境变量，将诊断数据与日常使用的设置分开。
 
@@ -93,7 +108,9 @@ dotnet publish .\MineDock.App\MineDock.App.csproj -c Release -r win-x64 --self-c
 
 v0.1.1 新增背景功能的 20 项专项检查及便携版的 5 项启动检查通过，本次未重复执行完整游戏下载。
 
-尚未完成真实 PCL 启动游戏的实机验证，也未在 Windows 10 实机测试。BMCLAPI 已验证版本清单及一个资源文件，部分分发节点的证书错误导致完整镜像安装未获验证。
+v0.1.2 的 55 项分页与在线界面检查、92 项核心与启动器检查、20 项背景回归检查和 5 项便携程序启动检查通过，覆盖真实分页、八位页码文字边界、选中反馈、目录自动关联、HMCL 新旧配置和最小窗口布局。本次未重复执行约 1 GB 的完整游戏安装。
+
+已检查官方 HMCL 3.16.4 EXE / JAR 的文件识别，配置兼容依据官方源码与本地配置样例验证。尚未完成真实 PCL / HMCL 启动游戏的实机验证，也未在 Windows 10 实机测试。BMCLAPI 已验证版本清单及一个资源文件，部分分发节点的证书错误导致完整镜像安装未获验证。
 
 详见 [验证记录](VALIDATION.md) 和 [更新日志](CHANGELOG.md)。
 

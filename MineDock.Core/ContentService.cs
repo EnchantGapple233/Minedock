@@ -7,6 +7,7 @@ namespace MineDock.Core;
 
 public sealed class ContentService(Network network)
 {
+    public const int SearchPageSize = 30;
     private const string Api = "https://api.modrinth.com/v2";
     private readonly Dictionary<string, Dictionary<string, ProjectVersion>> _installedIndexes = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _forbiddenProjects = [];
@@ -32,7 +33,7 @@ public sealed class ContentService(Network network)
         if (category.Length > 0) facets.Add(["categories:" + category]);
         if (feature.Length > 0) facets.Add(["categories:" + feature]);
         if (extra.Length > 0) facets.Add(["categories:" + extra]);
-        var url = $"{Api}/search?query={Uri.EscapeDataString(query)}&facets={Uri.EscapeDataString(JsonSerializer.Serialize(facets))}&index={sort}&limit=30&offset={offset}";
+        var url = $"{Api}/search?query={Uri.EscapeDataString(query)}&facets={Uri.EscapeDataString(JsonSerializer.Serialize(facets))}&index={sort}&limit={SearchPageSize}&offset={offset}";
         var data = await network.Json(url, ct);
         var projects = data["hits"]!.AsArray().Select(n => new SearchProject(n.Str("project_id"), n.Str("slug"), n.Str("title"),
             n.Str("description"), n.Str("icon_url"), n.Str("author"), n.Num("downloads"),
@@ -85,12 +86,12 @@ public sealed class ContentService(Network network)
                 {
                     RejectIncompatibleRenderer(target.GameDirectory);
                     var iris = (await Versions("iris", target.GameVersion, "fabric", ct)).FirstOrDefault(v => v.VersionType == "release")
-                        ?? throw new InvalidOperationException("没有找到当前版本的 Iris 正式版，请使用仅下载或先在 PCL 安装光影支持。");
+                        ?? throw new InvalidOperationException("没有找到当前版本的 Iris 正式版，请使用仅下载或先在启动器安装光影支持。");
                     await AddDependencies(plan, iris, target, new(), ct);
                     plan.Details.Add("光影运行组件：Iris 及其必需依赖已列入计划。");
                 }
                 else
-                    throw new InvalidOperationException("当前版本的光影运行组件无法自动确认。请使用「仅下载」，并通过 PCL 配置对应渲染组件。");
+                    throw new InvalidOperationException("当前版本的光影运行组件无法自动确认。请使用「仅下载」，并通过启动器配置对应渲染组件。");
             }
         }
         plan.Details.Add($"目标：{target.Display}");
@@ -105,7 +106,7 @@ public sealed class ContentService(Network network)
         {
             var name = Path.GetFileNameWithoutExtension(path);
             if (name.StartsWith("OptiFine", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("已有 OptiFine，不能自动加入 Iris。请先在 PCL 处理光影运行组件，或使用「仅下载」。");
+                throw new InvalidOperationException("已有 OptiFine，不能自动加入 Iris。请先在启动器处理光影运行组件，或使用「仅下载」。");
             try
             {
                 using var archive = ZipFile.OpenRead(path);
@@ -114,7 +115,7 @@ public sealed class ContentService(Network network)
                 using var stream = metadata.Open();
                 var id = JsonNode.Parse(stream).Str("id");
                 if (id is "canvas" or "optifabric" or "vulkanmod")
-                    throw new InvalidOperationException($"已有渲染组件 {id}，停止自动加入 Iris。请先在 PCL 处理，或使用「仅下载」。");
+                    throw new InvalidOperationException($"已有渲染组件 {id}，停止自动加入 Iris。请先在启动器处理，或使用「仅下载」。");
             }
             catch (InvalidDataException) { }
         }
@@ -155,7 +156,7 @@ public sealed class ContentService(Network network)
                     {
                         var installed = ParseVersion(pair.Value);
                         if (installedProjects.TryGetValue(installed.ProjectId, out var duplicate) && duplicate.Id != installed.Id)
-                            throw new InvalidOperationException("目标目录中存在同一项目的多个版本，请先在 PCL 处理。");
+                            throw new InvalidOperationException("目标目录中存在同一项目的多个版本，请先在启动器处理。");
                         installedProjects[installed.ProjectId] = installed;
                     }
                 }
@@ -165,7 +166,7 @@ public sealed class ContentService(Network network)
             _installedIndexes[modDirectory] = installedProjects;
         }
         if (installedProjects.TryGetValue(version.ProjectId, out var current) && current.Id != version.Id)
-            throw new InvalidOperationException($"已安装 {slug} 的其他版本（{current.Number}），请先在 PCL 处理版本替换。");
+            throw new InvalidOperationException($"已安装 {slug} 的其他版本（{current.Number}），请先在启动器处理版本替换。");
         plan.Details.Add($"依赖 / 项目：{project.Str("title")} · {version.Number}");
         foreach (var dependency in version.Dependencies.Where(d => d.Type == "required"))
         {
@@ -175,7 +176,7 @@ public sealed class ContentService(Network network)
                 required = (await Versions(dependency.ProjectId, target.GameVersion, target.Loader, ct))
                     .FirstOrDefault(v => v.VersionType == "release")
                     ?? throw new InvalidOperationException("缺少可用的正式版必需依赖：" + dependency.ProjectId);
-            else throw new InvalidOperationException("项目包含无法自动定位的必需依赖，请使用仅下载并在 PCL 中处理。");
+            else throw new InvalidOperationException("项目包含无法自动定位的必需依赖，请使用仅下载并在启动器中处理。");
             await AddDependencies(plan, required, target, resolved, ct);
         }
         foreach (var conflict in version.Dependencies.Where(d => d.Type == "incompatible"))
@@ -185,7 +186,7 @@ public sealed class ContentService(Network network)
                 _forbiddenVersions.Add(conflict.VersionId);
                 var forbidden = await Version(conflict.VersionId, ct);
                 if (installedProjects.TryGetValue(forbidden.ProjectId, out var installed) && installed.Id == forbidden.Id)
-                    throw new InvalidOperationException($"{version.Name} 声明与已有模组冲突，请先在 PCL 调整。");
+                    throw new InvalidOperationException($"{version.Name} 声明与已有模组冲突，请先在启动器调整。");
                 if (resolved.TryGetValue(forbidden.ProjectId, out var planned) && planned == forbidden.Id)
                     throw new InvalidOperationException($"{version.Name} 与本次计划中的另一个项目版本冲突。");
             }
@@ -193,7 +194,7 @@ public sealed class ContentService(Network network)
             {
                 _forbiddenProjects.Add(conflict.ProjectId);
                 if (installedProjects.ContainsKey(conflict.ProjectId) || resolved.ContainsKey(conflict.ProjectId))
-                    throw new InvalidOperationException($"{version.Name} 声明与已有模组或本次计划冲突，请先在 PCL 调整。");
+                    throw new InvalidOperationException($"{version.Name} 声明与已有模组或本次计划冲突，请先在启动器调整。");
             }
         }
         if (current is null) plan.Add(File(version.Primary, modDirectory, project.Str("title") + " " + version.Number));

@@ -5,17 +5,47 @@
  Title="MineDock" Width="1340" Height="860" MinWidth="1080" MinHeight="740"
  WindowStartupLocation="CenterScreen" Background="{DynamicResource BackgroundBrush}"
  Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13"
+ UseLayoutRounding="True" SnapsToDevicePixels="True"
  WindowStyle="None" ResizeMode="CanResize" Loaded="OnLoaded" Closing="OnClosing">
  <WindowChrome.WindowChrome><WindowChrome CaptionHeight="42" ResizeBorderThickness="6" CornerRadius="8" GlassFrameThickness="0"/></WindowChrome.WindowChrome>
  <Window.Resources>
   <Style x:Key="Nav" TargetType="RadioButton">
-   <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/><Setter Property="Margin" Value="10,2"/>
+   <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/><Setter Property="Margin" Value="12,4"/>
    <Setter Property="Height" Value="44"/><Setter Property="Cursor" Value="Hand"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
-    <Border x:Name="B" Background="Transparent" CornerRadius="6" Padding="15,0"><ContentPresenter VerticalAlignment="Center"/></Border>
+    <Grid x:Name="NavVisual" Background="Transparent">
+     <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+     <VisualStateManager.VisualStateGroups>
+      <VisualStateGroup x:Name="CheckStates">
+       <VisualStateGroup.Transitions><VisualTransition GeneratedDuration="0:0:0.16"/></VisualStateGroup.Transitions>
+       <VisualState x:Name="Unchecked"><Storyboard>
+        <DoubleAnimation Storyboard.TargetName="NavVisual" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0"/>
+        <DoubleAnimation Storyboard.TargetName="NavSurface" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0"/>
+       </Storyboard></VisualState>
+       <VisualState x:Name="Checked"><Storyboard>
+        <DoubleAnimation Storyboard.TargetName="NavVisual" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-2" Duration="0"/>
+        <DoubleAnimation Storyboard.TargetName="NavSurface" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To=".3" Duration="0"/>
+       </Storyboard></VisualState>
+      </VisualStateGroup>
+     </VisualStateManager.VisualStateGroups>
+     <Border x:Name="NavSurface" Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" Opacity="0" IsHitTestVisible="False">
+      <Border.Effect><DropShadowEffect Color="Black" BlurRadius="14" ShadowDepth="5" Direction="270" Opacity="0" RenderingBias="Performance"/></Border.Effect>
+     </Border>
+     <Border x:Name="B" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="6" Padding="13,0"><ContentPresenter VerticalAlignment="Center"/></Border>
+     <Border x:Name="NavRail" Width="3" Height="20" Background="{DynamicResource AccentBrush}" CornerRadius="1.5" HorizontalAlignment="Left" VerticalAlignment="Center" Opacity="0" IsHitTestVisible="False"/>
+    </Grid>
     <ControlTemplate.Triggers>
-     <Trigger Property="IsChecked" Value="True"><Setter TargetName="B" Property="Background" Value="{DynamicResource AccentSoftBrush}"/><Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/></Trigger>
-     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Opacity" Value=".75"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="{DynamicResource SurfaceBrush}"/></Trigger>
+     <Trigger Property="IsChecked" Value="True">
+      <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+      <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+      <Setter TargetName="NavSurface" Property="Opacity" Value="1"/>
+      <Setter TargetName="NavRail" Property="Opacity" Value="1"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+     </Trigger>
+     <MultiTrigger><MultiTrigger.Conditions><Condition Property="IsChecked" Value="True"/><Condition Property="IsMouseOver" Value="True"/></MultiTrigger.Conditions><Setter TargetName="B" Property="Background" Value="{DynamicResource AccentSoftBrush}"/><Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></MultiTrigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></Trigger>
     </ControlTemplate.Triggers>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
@@ -44,7 +74,7 @@
    <StackPanel Orientation="Horizontal" Margin="18,0">
     <local:Icon Kind="box" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}"/>
     <TextBlock Text="MineDock" Margin="9,0,12,0" FontWeight="SemiBold" FontSize="12"/>
-    <TextBlock Text="0.1.1" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
+    <TextBlock Text="0.1.2" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
    </StackPanel>
    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True" Margin="0,0,5,0">
     <Button x:Name="BackgroundSettingsButton" Style="{StaticResource IconButton}" Click="OpenBackgroundSettings" ToolTip="自定义背景" AutomationProperties.Name="自定义背景"><local:Icon Kind="image" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}"/></Button>
@@ -112,8 +142,8 @@
      <StackPanel Grid.Row="2" Margin="20,12,20,14" VerticalAlignment="Bottom">
       <TextBlock Text="游戏来源" Style="{StaticResource Caption}"/>
       <ComboBox ItemsSource="{Binding SourceChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding SourceValue}" SelectionChanged="SourceChanged" FontSize="11" IsEnabled="{Binding CanPrepare}"/>
-      <Button Click="AssociatePcl" ToolTip="{Binding PclTooltip}" Margin="0,12,0,0" HorizontalContentAlignment="Left">
-       <StackPanel Orientation="Horizontal"><local:Icon Kind="external-link" Width="15" Height="15" Foreground="{DynamicResource MutedBrush}"/><TextBlock Text="{Binding PclLabel}" Margin="9,0,0,0" FontSize="12"/></StackPanel>
+      <Button x:Name="LauncherButton" Click="AssociateLauncher" ToolTip="{Binding LauncherTooltip}" IsEnabled="{Binding CanPrepare}" Margin="0,12,0,0" HorizontalContentAlignment="Left">
+       <StackPanel Orientation="Horizontal"><local:Icon Kind="external-link" Width="15" Height="15" Foreground="{DynamicResource MutedBrush}"/><TextBlock Text="{Binding LauncherLabel}" Margin="9,0,0,0" FontSize="12"/></StackPanel>
       </Button>
       <TextBlock Text="BMCLAPI · Mojang · Modrinth" Foreground="{DynamicResource MutedBrush}" FontSize="9" Margin="0,13,0,0"/>
      </StackPanel>
@@ -193,12 +223,12 @@
         <Grid Margin="0,19,0,20"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="所需 Java" FontSize="12" Foreground="{DynamicResource MutedBrush}"/><TextBlock Grid.Column="1" Text="{Binding JavaRequirement}" Foreground="{DynamicResource AccentBrush}" FontSize="12"/></Grid>
         <Button Style="{StaticResource PrimaryButton}" Click="PrepareGame" IsEnabled="{Binding CanPrepare}"><StackPanel Orientation="Horizontal"><local:Icon Kind="plus" Width="17" Height="17" Foreground="{DynamicResource AccentInkBrush}" Margin="0,0,8,0"/><TextBlock Text="创建安装计划" Foreground="{DynamicResource AccentInkBrush}"/></StackPanel></Button>
         <Button Click="DownloadGameJar" IsEnabled="{Binding CanPrepare}" Margin="0,9,0,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="download" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/><TextBlock Text="仅下载客户端 JAR" FontSize="12"/></StackPanel></Button>
-        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="6" Padding="12" Margin="0,23,0,0"><StackPanel><StackPanel Orientation="Horizontal"><local:Icon Kind="shield-check" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/><TextBlock Text="PCL 兼容安装" FontSize="12"/></StackPanel><TextBlock Text="标准版本结构 · 文件校验" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,8,0,0"/></StackPanel></Border>
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="6" Padding="12" Margin="0,23,0,0"><StackPanel><StackPanel Orientation="Horizontal"><local:Icon Kind="shield-check" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/><TextBlock Text="PCL / HMCL 兼容" FontSize="12"/></StackPanel><TextBlock Text="标准版本结构 · 文件校验" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,8,0,0"/></StackPanel></Border>
        </StackPanel></ScrollViewer>
       </Border>
      </Grid>
      <Grid Grid.Row="1" Visibility="{Binding IsCatalog, Converter={StaticResource BoolVisibility}}">
-      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="36"/></Grid.RowDefinitions>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
       <StackPanel>
        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="132"/><ColumnDefinition Width="10"/><ColumnDefinition Width="86"/></Grid.ColumnDefinitions>
         <Grid><TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" KeyDown="SearchKeyDown" Padding="35,8,10,8" AutomationProperties.Name="搜索 Modrinth 内容"/><local:Icon Kind="search" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"/></Grid>
@@ -213,9 +243,9 @@
         <ComboBox Width="136" Margin="0,0,8,7" ItemsSource="{Binding ExtraFilters}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding FilterExtra}" Visibility="{Binding ShowExtraFilter, Converter={StaticResource BoolVisibility}}" ToolTip="分辨率 / 性能影响标签"/>
        </WrapPanel>
       </StackPanel>
-      <Grid Grid.Row="1">
+      <Grid x:Name="CatalogResults" Grid.Row="1">
        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="22"/><ColumnDefinition Width="265"/></Grid.ColumnDefinitions>
-       <ListBox ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}" SelectionChanged="ProjectSelected" AutomationProperties.Name="Modrinth 搜索结果">
+       <ListBox x:Name="ProjectList" ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}" SelectionChanged="ProjectSelected" AutomationProperties.Name="Modrinth 搜索结果">
         <ListBox.ItemTemplate><DataTemplate><Grid MinHeight="79">
          <Grid.ColumnDefinitions><ColumnDefinition Width="62"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
          <Border Width="48" Height="48" Background="{DynamicResource RaisedBrush}" CornerRadius="6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,4,0,0" ClipToBounds="True">
@@ -245,10 +275,28 @@
         </StackPanel></ScrollViewer>
        </Border>
       </Grid>
-      <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-       <Button Click="PreviousPage" MinHeight="30" Padding="9,4" ToolTip="上一页"><local:Icon Kind="arrow-left" Width="14" Height="14" Foreground="{DynamicResource MutedBrush}"/></Button>
-       <Button Click="NextPage" MinHeight="30" Padding="12,4" Margin="8,0,0,0" IsEnabled="{Binding HasNext}"><TextBlock Text="下一页" FontSize="11"/></Button>
-      </StackPanel>
+      <Grid x:Name="CatalogPager" Grid.Row="2" Margin="0,14,0,0">
+       <Grid.RowDefinitions><RowDefinition Height="46"/><RowDefinition Height="22"/></Grid.RowDefinitions>
+       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <TextBlock x:Name="CatalogCountText" Text="{Binding ResultCountLabel}" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,0,18,0" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"/>
+       <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+        <Button x:Name="PreviousPageButton" Style="{StaticResource PagerButton}" Click="PreviousPage" IsEnabled="{Binding CanPreviousPage}" ToolTip="上一页" AutomationProperties.Name="上一页">
+         <local:Icon Kind="chevron-right" Width="19" Height="19" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" RenderTransformOrigin=".5,.5"><local:Icon.RenderTransform><RotateTransform Angle="180"/></local:Icon.RenderTransform></local:Icon>
+        </Button>
+        <TextBox x:Name="PageNumberBox" Text="{Binding PageInput, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanJumpPage}"
+                 Width="94" Height="42" MinHeight="42" Padding="8,2" Margin="8,0" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" VerticalContentAlignment="Center"
+                 KeyDown="PageNumberKeyDown" GotKeyboardFocus="PageNumberFocused" ToolTip="当前页码" AutomationProperties.Name="页码" AutomationProperties.HelpText="{Binding PageCountLabel}"/>
+        <TextBlock x:Name="PageCountText" Text="{Binding PageCountLabel}" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,12,0"/>
+        <Button x:Name="NextPageButton" Style="{StaticResource PagerButton}" Click="NextPage" IsEnabled="{Binding CanNextPage}" ToolTip="下一页" AutomationProperties.Name="下一页">
+         <local:Icon Kind="chevron-right" Width="19" Height="19" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+        </Button>
+        <Border Width="1" Height="17" Background="{DynamicResource BorderBrush}" Margin="11,0"/>
+        <Button x:Name="JumpPageButton" Style="{StaticResource PagerButton}" Click="JumpToPage" IsEnabled="{Binding CanJumpPage}" ToolTip="跳转到指定页" AutomationProperties.Name="跳转到指定页">
+         <local:Icon Kind="corner-down-left" Width="18" Height="18" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+        </Button>
+       </StackPanel>
+       <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding PageError}" Foreground="{DynamicResource WarningBrush}" FontSize="11" HorizontalAlignment="Right" AutomationProperties.LiveSetting="Polite"/>
+      </Grid>
      </Grid>
      <Grid Grid.Row="1" Visibility="{Binding IsJava, Converter={StaticResource BoolVisibility}}">
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/><ColumnDefinition Width="300"/></Grid.ColumnDefinitions>

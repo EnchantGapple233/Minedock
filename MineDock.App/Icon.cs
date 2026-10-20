@@ -67,3 +67,9 @@ public sealed class EmptyVisibilityConverter : IValueConverter
         => value is 0 ? Visibility.Visible : Visibility.Collapsed;
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
+public sealed class ListItemWidthConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is double width && double.IsFinite(width) && width > 13 ? width - 13 : double.PositiveInfinity;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}

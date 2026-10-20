@@ -19,6 +19,7 @@
     <local:NotConverter x:Key="Not"/>
     <local:NotVisibilityConverter x:Key="NotVisibility"/>
     <local:EmptyVisibilityConverter x:Key="EmptyVisibility"/>
+    <local:ListItemWidthConverter x:Key="ListItemWidth"/>
     <Style TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
@@ -43,15 +44,48 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
-            </Border>
+            <Grid x:Name="Root" SnapsToDevicePixels="True" Background="Transparent">
+              <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                  <VisualStateGroup.Transitions><VisualTransition GeneratedDuration="0:0:0.14"/></VisualStateGroup.Transitions>
+                  <VisualState x:Name="Normal"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="Tint" Storyboard.TargetProperty="Opacity" To="0" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonSurface" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonShadow" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0"/>
+                  </Storyboard></VisualState>
+                  <VisualState x:Name="MouseOver"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="Tint" Storyboard.TargetProperty="Opacity" To=".07" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonSurface" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-1.5" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonShadow" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To=".24" Duration="0"/>
+                  </Storyboard></VisualState>
+                  <VisualState x:Name="Pressed"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="Tint" Storyboard.TargetProperty="Opacity" To=".13" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonSurface" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To=".5" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonShadow" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To=".08" Duration="0"/>
+                  </Storyboard></VisualState>
+                  <VisualState x:Name="Disabled"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="Tint" Storyboard.TargetProperty="Opacity" To="0" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonSurface" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="ButtonShadow" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0"/>
+                  </Storyboard></VisualState>
+                </VisualStateGroup>
+              </VisualStateManager.VisualStateGroups>
+              <Grid x:Name="ButtonSurface">
+              <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+              <Border x:Name="ButtonShadow" Background="{TemplateBinding Background}" CornerRadius="6" IsHitTestVisible="False">
+                <Border.Effect><DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="4" Direction="270" Opacity="0" RenderingBias="Performance"/></Border.Effect>
+              </Border>
+              <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+              </Border>
+              <Border x:Name="Tint" Background="{TemplateBinding Foreground}" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
+              <Border x:Name="FocusRing" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
+              </Grid>
+            </Grid>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Frame" Property="Opacity" Value=".78"/></Trigger>
-              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Frame" Property="Opacity" Value=".55"/></Trigger>
-              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Frame" Property="Opacity" Value=".36"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
-              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Root" Property="Opacity" Value=".36"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="FocusRing" Property="Opacity" Value="1"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -69,6 +103,11 @@
       <Setter Property="Padding" Value="9"/><Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
+    <Style x:Key="PagerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Width" Value="42"/><Setter Property="Height" Value="42"/>
+      <Setter Property="MinHeight" Value="42"/><Setter Property="Padding" Value="10"/>
+      <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+    </Style>
     <Style TargetType="TextBox">
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
       <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}"/>
@@ -84,7 +123,7 @@
           <ControlTemplate TargetType="TextBox">
             <Border x:Name="Border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="1" CornerRadius="6">
-              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+              <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Focusable="False"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></Trigger>
@@ -117,6 +156,7 @@
               <ContentPresenter Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}"
                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                   ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" ClipToBounds="True" IsHitTestVisible="False" VerticalAlignment="Center"/>
+              <Border x:Name="FocusRing" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="6" Opacity="0" IsHitTestVisible="False"/>
               <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                 <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="340" Margin="0,4,0,0"
                         Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="4">
@@ -124,6 +164,11 @@
                 </Border>
               </Popup>
             </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="FocusRing" Property="Opacity" Value="1"/></Trigger>
+              <Trigger Property="IsDropDownOpen" Value="True"><Setter TargetName="FocusRing" Property="Opacity" Value="1"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".4"/></Trigger>
+            </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
@@ -169,15 +214,47 @@
     </Style>
     <Style TargetType="ListBoxItem">
       <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/>
-      <Setter Property="Margin" Value="0,0,0,4"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="MaxWidth" Value="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource ListItemWidth}}"/>
+      <Setter Property="Margin" Value="4,4,9,7"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListBoxItem">
-            <Border x:Name="Row" Padding="12" Background="Transparent" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent"><ContentPresenter/></Border>
+            <Grid x:Name="SelectionRoot" Background="Transparent">
+              <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+              <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="SelectionStates">
+                  <VisualStateGroup.Transitions><VisualTransition GeneratedDuration="0:0:0.16"/></VisualStateGroup.Transitions>
+                  <VisualState x:Name="Unselected"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="SelectionRoot" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="SelectionSurface" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0"/>
+                  </Storyboard></VisualState>
+                  <VisualState x:Name="Selected"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="SelectionRoot" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-2" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="SelectionSurface" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To=".3" Duration="0"/>
+                  </Storyboard></VisualState>
+                  <VisualState x:Name="SelectedUnfocused"><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="SelectionRoot" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-2" Duration="0"/>
+                    <DoubleAnimation Storyboard.TargetName="SelectionSurface" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To=".3" Duration="0"/>
+                  </Storyboard></VisualState>
+                </VisualStateGroup>
+              </VisualStateManager.VisualStateGroups>
+              <Border x:Name="SelectionSurface" Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" Opacity="0" IsHitTestVisible="False">
+                <Border.Effect><DropShadowEffect Color="Black" BlurRadius="14" ShadowDepth="5" Direction="270" Opacity="0" RenderingBias="Performance"/></Border.Effect>
+              </Border>
+              <Border x:Name="Row" Padding="13,12" Background="Transparent" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent"><ContentPresenter/></Border>
+              <Border x:Name="SelectionRail" Width="3" Height="25" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" Opacity="0" IsHitTestVisible="False"/>
+            </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource SurfaceBrush}"/></Trigger>
-              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSoftBrush}"/><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource BorderBrush}"/></Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+                <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                <Setter TargetName="SelectionSurface" Property="Opacity" Value="1"/>
+                <Setter TargetName="SelectionRail" Property="Opacity" Value="1"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="SelectionRoot" Property="Opacity" Value=".4"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>

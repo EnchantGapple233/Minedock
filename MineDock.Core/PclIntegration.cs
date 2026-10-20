@@ -10,8 +10,9 @@ public static class PclIntegration
         if (!File.Exists(path)) return result;
         foreach (var line in File.ReadLines(path))
         {
-            var split = line.IndexOf(':');
-            if (split < 1) split = line.IndexOf('=');
+            var colon = line.IndexOf(':');
+            var equal = line.IndexOf('=');
+            var split = colon < 1 ? equal : equal < 1 ? colon : Math.Min(colon, equal);
             if (split > 0) result[line[..split].Trim().Trim('\uFEFF')] = line[(split + 1)..].Trim();
         }
         return result;
@@ -52,8 +53,13 @@ public static class PclIntegration
         return (enabled ? version : root, enabled, null);
     }
     public static List<Instance> Discover(string root, string pclExecutable)
+        => Discover(root, (id, loader, type) => Resolve(root, id, pclExecutable, loader, type));
+
+    internal static List<Instance> Discover(string root,
+        Func<string, string, string, (string Directory, bool Isolated, string? Error)> resolve)
     {
         var result = new List<Instance>();
+        if (string.IsNullOrWhiteSpace(root)) return result;
         if (!System.IO.Directory.Exists(Path.Combine(root, "versions"))) return result;
         foreach (var folder in System.IO.Directory.EnumerateDirectories(Path.Combine(root, "versions")))
         {
@@ -84,7 +90,7 @@ public static class PclIntegration
                 if (baseVersion["patches"] is JsonArray patches &&
                     patches.FirstOrDefault(p => p.Str("id") == "game")?.Str("version") is { Length: > 0 } patchedGame)
                     game = patchedGame;
-                var resolved = Resolve(root, id, pclExecutable, loader, chain.Last().Str("type", "release"));
+                var resolved = resolve(id, loader, chain.Last().Str("type", "release"));
                 result.Add(new(id, game, loader, resolved.Directory, resolved.Isolated, resolved.Error));
             }
             catch (Exception ex) when (ex is not OutOfMemoryException)

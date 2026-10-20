@@ -1,0 +1,11 @@
+{
+  "Passed": 5,
+  "Checks": [
+    "Portable EXE starts without DOTNET_ROOT",
+    "Portable EXE exposes custom background button",
+    "Portable EXE opens settings and restores cached background",
+    "Portable EXE closes normally",
+    "Portable EXE reports no unhandled errors"
+  ],
+  "ExitCode": 0
+}
