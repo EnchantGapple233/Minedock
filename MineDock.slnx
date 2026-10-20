@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MineDock.App/MineDock.App.csproj" />
+  <Project Path="MineDock.Checks/MineDock.Checks.csproj" />
+  <Project Path="MineDock.Core/MineDock.Core.csproj" />
+</Solution>
