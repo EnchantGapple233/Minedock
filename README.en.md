@@ -4,7 +4,7 @@
 
 A Windows desktop downloader and installer for Minecraft Java Edition, built with C#, .NET 10, and WPF.
 
-> This project was created entirely through "wish-driven programming" with an AI coding assistant. The developer is almost a complete beginner in the relevant fields.
+> This project was created entirely through "wish-driven programming" with an AI coding assistant. The developer is almost a complete beginner in the relevant fields.I am deeply grateful for your incisive comments and guidance.
 
 ## Downloads
 
