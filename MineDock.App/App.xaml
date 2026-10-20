@@ -17,6 +17,7 @@
     <SolidColorBrush x:Key="WarningBrush" Color="#F3BE70"/>
     <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
     <local:NotConverter x:Key="Not"/>
+    <local:NotVisibilityConverter x:Key="NotVisibility"/>
     <local:EmptyVisibilityConverter x:Key="EmptyVisibility"/>
     <Style TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>

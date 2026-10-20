@@ -1,0 +1,26 @@
+{
+  "Passed": 20,
+  "Checks": [
+    "Existing settings without background keep default appearance",
+    "Png import and decode",
+    "Jpeg import and decode",
+    "Webp import and decode",
+    "BMP import",
+    "Original image remains unchanged and unlocked",
+    "Slider and layout persist immediately",
+    "Reopening restores cached image after original was moved",
+    "Reopening restores intensity and layout",
+    "Background binds to image and intensity without intercepting controls",
+    "Title bar image button opens background settings",
+    "Zero intensity hides background",
+    "Maximum dark intensity retains text contrast",
+    "Light theme adapts background intensity",
+    "Settings panel fits minimum window size",
+    "Corrupt image preserves existing background and resets busy state",
+    "Restore default clears image and persists defaults",
+    "Reopening after reset keeps default background",
+    "Missing cache falls back safely and offers reselect",
+    "Cache path traversal is rejected"
+  ],
+  "ExitCode": 0
+}

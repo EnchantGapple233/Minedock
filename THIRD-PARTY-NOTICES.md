@@ -16,7 +16,7 @@ Source: https://github.com/Meloong-Git/PCL
 
 ## SkiaSharp / Skia
 
-SkiaSharp 4.153.1 decodes Modrinth project icons, including WebP, into WPF images. The managed component and Windows native assets are distributed under MIT with their upstream third-party notices.
+SkiaSharp 4.153.1 decodes Modrinth project icons and custom background images, including WebP, into WPF images. The managed component and Windows native assets are distributed under MIT with their upstream third-party notices.
 
 Source: https://github.com/mono/SkiaSharp
 

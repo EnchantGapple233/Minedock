@@ -8,10 +8,10 @@ A Windows desktop downloader and installer for Minecraft Java Edition, built wit
 
 ## Downloads
 
-Current version: **v0.1.0**.
+Current version: **v0.1.1**.
 
-- [Windows x64 portable build](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.0/MineDock-0.1.0-win-x64.zip)
-- [Release notes and checksums](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.0)
+- [Windows x64 portable build](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.1/MineDock-0.1.1-win-x64.zip)
+- [Release notes and checksums](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.1)
 - [All releases](https://github.com/EnchantGapple233/Minedock/releases)
 
 Extract the ZIP and run `MineDock.exe`. The .NET runtime is included. The application targets Windows 10 / 11 x64; it has only been tested on Windows 11 x64 so far.
@@ -28,6 +28,7 @@ Extract the ZIP and run `MineDock.exe`. The .NET runtime is included. The applic
 - Read PCL's instance isolation settings to select the appropriate resource directory.
 - Download caching, segmented transfers and resuming, cancellation and retries, task history, hash verification, rollback, and recovery after interruption.
 - Light and dark themes, a Chinese-language interface, independent section filters, and an installation plan panel.
+- Custom PNG, JPEG, WebP, or BMP backgrounds, with intensity, fill / fit layout, and restore-default controls.
 
 ![MineDock interface example, v0.1.0](docs/images/catalog.png)
 
@@ -41,6 +42,12 @@ Extract the ZIP and run `MineDock.exe`. The .NET runtime is included. The applic
 Before installing into a target directory, close its running game and finish any PCL installation task using that directory. MineDock only reads PCL settings and stops resource installation when it cannot determine the isolation policy.
 
 Java defaults to `%APPDATA%\.minecraft\runtime\MineDock`. After installation, let PCL search for Java or manually select the relevant `bin\java.exe`. MineDock does not modify `PATH` or `JAVA_HOME`.
+
+### Custom Backgrounds
+
+Use the image button at the top right of the title bar to select a background. The image, intensity, and layout settings are saved automatically and survive moving the original file. Restoring defaults does not delete the original. Images up to 64 MB and 40 megapixels are supported; cached images are limited to 2560 pixels on the longest edge. Light and dark themes adapt the displayed background strength to preserve text readability.
+
+![Custom background settings, v0.1.1](docs/images/background-settings.png)
 
 ## Download Sources
 
@@ -83,6 +90,8 @@ Diagnostic screenshots: `MineDock.exe --capture <absolute-output-directory>`. Se
 ## Validation Status
 
 Actual installation of Minecraft 1.21.1, Fabric, Fabric API, and Java has been verified, with 65 checks passing in the full workflow. A separate set of 62 local and online checks overlaps with that set and must not be added to it as a total.
+
+The v0.1.1 background update passed 20 focused checks and 5 portable startup checks. The full game download was not repeated for this update.
 
 Launching the installed game through a genuine PCL executable and running on Windows 10 have not been verified. BMCLAPI checks retrieved the version manifest and one asset successfully; certificate failures on some distribution nodes prevented validation of a complete mirror installation.
 

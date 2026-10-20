@@ -41,6 +41,7 @@ public partial class MainWindow : Window
         _games = new(_network); _content = new(_network); _java = new(_network); _engine = new(_network);
         DataContext = Vm;
         InitializeComponent();
+        RestoreBackground();
     }
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {

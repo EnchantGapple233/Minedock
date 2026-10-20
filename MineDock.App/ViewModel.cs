@@ -42,6 +42,38 @@ public class MainViewModel : Observable
 {
     public Settings Settings { get; }
     public MainViewModel(Settings settings) => Settings = settings;
+    private ImageSource? _backgroundImage;
+    public ImageSource? BackgroundImage
+    {
+        get => _backgroundImage;
+        set { if (Set(ref _backgroundImage, value)) Changed(nameof(HasBackground)); }
+    }
+    public bool HasBackground => BackgroundImage is not null;
+    public string BackgroundName => HasBackground ? Settings.BackgroundImageName : "未设置背景";
+    public double BackgroundIntensity
+    {
+        get => Settings.BackgroundIntensity;
+        set
+        {
+            var intensity = double.IsFinite(value) ? Math.Clamp(value, 0, 1) : 0.55;
+            if (Settings.BackgroundIntensity == intensity) return;
+            Settings.BackgroundIntensity = intensity;
+            Changed(); Changed(nameof(BackgroundOpacity)); Changed(nameof(BackgroundPercent));
+        }
+    }
+    public double BackgroundOpacity => BackgroundIntensity * (App.IsDarkTheme ? 0.26 : 0.15);
+    public string BackgroundPercent => $"{BackgroundIntensity:P0}";
+    public string BackgroundStretch
+    {
+        get => Settings.BackgroundStretch;
+        set { Settings.BackgroundStretch = value == "Uniform" ? "Uniform" : "UniformToFill"; Changed(); }
+    }
+    public Choice[] BackgroundStretchChoices { get; } = [new("UniformToFill", "填充"), new("Uniform", "适应")];
+    private string _backgroundError = "";
+    public string BackgroundError { get => _backgroundError; set => Set(ref _backgroundError, value); }
+    private bool _backgroundBusy;
+    public bool BackgroundBusy { get => _backgroundBusy; set { if (Set(ref _backgroundBusy, value)) Changed(nameof(CanChangeBackground)); } }
+    public bool CanChangeBackground => !BackgroundBusy;
     public ObservableCollection<GameRow> Games { get; } = [];
     public ObservableCollection<ProjectRow> Projects { get; } = [];
     public ObservableCollection<Instance> Instances { get; } = [];

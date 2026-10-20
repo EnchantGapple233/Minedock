@@ -8,10 +8,10 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 
 ## 下载
 
-当前版本：**v0.1.0**。
+当前版本：**v0.1.1**。
 
-- [Windows x64 便携版](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.0/MineDock-0.1.0-win-x64.zip)
-- [版本说明与校验文件](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.0)
+- [Windows x64 便携版](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.1/MineDock-0.1.1-win-x64.zip)
+- [版本说明与校验文件](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.1)
 - [全部版本](https://github.com/EnchantGapple233/Minedock/releases)
 
 解压后运行 `MineDock.exe`，无需额外安装 .NET。程序面向 Windows 10 / 11 x64，目前只在 Windows 11 x64 实机验证。
@@ -28,6 +28,7 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 - 读取 PCL 的版本隔离设置，将资源写入对应实例目录。
 - 下载缓存、大文件分段与断点续传、取消和重试、任务记录、哈希校验、安装失败回滚及中断恢复。
 - 明暗主题、中文界面、栏目独立筛选和安装计划面板。
+- 自定义背景图片，支持 PNG、JPEG、WebP、BMP，可调整背景强度、选择填充或适应，并恢复默认。
 
 ![MineDock 界面示例，v0.1.0](docs/images/catalog.png)
 
@@ -41,6 +42,12 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 向目标目录安装内容时，应先结束对应游戏，以及 PCL 中对同一目录执行的安装任务。MineDock 只读 PCL 配置，无法确认隔离策略时会停止资源安装。
 
 Java 默认安装到 `%APPDATA%\.minecraft\runtime\MineDock`。安装后可在 PCL 中搜索 Java，或手动导入对应版本的 `bin\java.exe`。程序不会修改 `PATH` 或 `JAVA_HOME`。
+
+### 自定义背景
+
+点击标题栏右上角的图片按钮选择背景。图片、强度和布局设置会自动保存；移动原图后仍可显示，恢复默认不会删除原图。支持最大 64 MB、4000 万像素的图片，缓存最长边不超过 2560 像素。明暗主题会分别控制背景显示强度，以保持文字可读。
+
+![自定义背景设置，v0.1.1](docs/images/background-settings.png)
 
 ## 下载来源
 
@@ -83,6 +90,8 @@ dotnet publish .\MineDock.App\MineDock.App.csproj -c Release -r win-x64 --self-c
 ## 验证状态
 
 已完成 Minecraft 1.21.1、Fabric、Fabric API 和 Java 的实际安装验证，完整流程 65 项检查通过。另有包含重叠项目的 62 项本地及在线检查，不能与前一组相加。
+
+v0.1.1 新增背景功能的 20 项专项检查及便携版的 5 项启动检查通过，本次未重复执行完整游戏下载。
 
 尚未完成真实 PCL 启动游戏的实机验证，也未在 Windows 10 实机测试。BMCLAPI 已验证版本清单及一个资源文件，部分分发节点的证书错误导致完整镜像安装未获验证。
 

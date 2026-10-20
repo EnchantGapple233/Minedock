@@ -14,6 +14,10 @@ public sealed class Settings
     public string SelectedInstance { get; set; } = "";
     public SourceMode Source { get; set; }
     public string Theme { get; set; } = "System";
+    public string BackgroundImageFile { get; set; } = "";
+    public string BackgroundImageName { get; set; } = "";
+    public double BackgroundIntensity { get; set; } = 0.55;
+    public string BackgroundStretch { get; set; } = "UniformToFill";
     public string JavaDirectory { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft", "runtime", "MineDock");
     public static string DataDirectory => Environment.GetEnvironmentVariable("MINEDOCK_DATA")
