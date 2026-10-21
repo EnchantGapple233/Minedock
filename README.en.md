@@ -4,6 +4,8 @@
 
 A Windows desktop downloader and installer for Minecraft Java Edition, built with C#, .NET 10, and WPF.
 
+> This project was created entirely through "wish-driven programming" with an AI coding assistant. The developer is almost a complete beginner in the relevant fields. Feedback and guidance are greatly appreciated.
+
 ## Downloads
 
 Current version: **v0.1.3**, available as a self-contained Windows x64 single EXE.

@@ -5,8 +5,6 @@
 Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 和 WPF 开发。
 
 > 本项目完全源于许愿式编程，开发者在相关知识方面几乎是纯小白。十分感激各位大佬锐评指导。
->
-> This project was created entirely through "wish-driven programming" with an AI coding assistant. The developer is almost a complete beginner in the relevant fields. Feedback and guidance are greatly appreciated.
 
 ## 下载
 
