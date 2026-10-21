@@ -12,6 +12,7 @@ using MineDock.Core;
 var testRoot = Path.GetFullPath(args.FirstOrDefault(a => !a.StartsWith("--")) ?? Path.Combine(Path.GetTempPath(), "MineDock-checks-" + Guid.NewGuid().ToString("N")));
 Directory.CreateDirectory(testRoot);
 Environment.SetEnvironmentVariable("MINEDOCK_DATA", Path.Combine(testRoot, "state"));
+HttpClient.DefaultProxy = new LoopbackBypassProxy(HttpClient.DefaultProxy);
 var checks = new List<string>();
 void Check(bool condition, string name)
 {
@@ -268,6 +269,12 @@ File.WriteAllText(Path.Combine(testRoot, "results.json"), JsonSerializer.Seriali
 
 sealed class InlineProgress(Action<TransferProgress> report) : IProgress<TransferProgress>
 { public void Report(TransferProgress value) => report(value); }
+sealed class LoopbackBypassProxy(IWebProxy upstream) : IWebProxy
+{
+    public ICredentials? Credentials { get => upstream.Credentials; set => upstream.Credentials = value; }
+    public Uri? GetProxy(Uri destination) => destination.IsLoopback ? destination : upstream.GetProxy(destination);
+    public bool IsBypassed(Uri host) => host.IsLoopback || upstream.IsBypassed(host);
+}
 sealed class LocalServer : IDisposable
 {
     private readonly HttpListener _listener = new();

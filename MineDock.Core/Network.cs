@@ -22,7 +22,7 @@ public sealed class Network : IDisposable
             PooledConnectionLifetime = TimeSpan.FromMinutes(5)
         });
         _client.Timeout = Timeout.InfiniteTimeSpan;
-        _client.DefaultRequestHeaders.UserAgent.ParseAdd("MineDock/0.1.0 (Windows desktop)");
+        _client.DefaultRequestHeaders.UserAgent.ParseAdd("MineDock/0.1.3 (Windows desktop)");
     }
     public static string? Mirror(string url)
     {

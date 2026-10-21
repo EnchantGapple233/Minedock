@@ -1,0 +1,22 @@
+<Window x:Class="MineDock.App.NoticesWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:MineDock.App"
+ Title="许可与源码 · MineDock" Width="820" Height="680" MinWidth="640" MinHeight="500"
+ WindowStartupLocation="CenterOwner" Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextBrush}"
+ FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13" UseLayoutRounding="True" SnapsToDevicePixels="True">
+ <Grid Margin="24">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <ComboBox x:Name="NoticeChoice" SelectionChanged="SelectNotice" DisplayMemberPath="Label" SelectedIndex="0" AutomationProperties.Name="选择许可文件"/>
+   <Button Grid.Column="2" Click="ExportHmclSource" Padding="12,8" AutomationProperties.Name="导出 HMCL 对应源码">
+    <StackPanel Orientation="Horizontal"><local:Icon Kind="download" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0"/><TextBlock Text="HMCL 对应源码" FontSize="12"/></StackPanel>
+   </Button>
+  </Grid>
+  <TextBox x:Name="NoticeText" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+           VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="16" FontFamily="Consolas, Microsoft YaHei UI" FontSize="12" AutomationProperties.Name="许可正文"/>
+  <Grid Grid.Row="2" Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="86"/></Grid.ColumnDefinitions>
+   <TextBlock x:Name="NoticeStatus" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,16,0"/>
+   <Button Grid.Column="1" Click="CloseNotices" Content="关闭"/>
+  </Grid>
+ </Grid>
+</Window>

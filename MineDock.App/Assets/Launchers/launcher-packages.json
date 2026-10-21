@@ -1,0 +1,18 @@
+[
+  {
+    "Kind": 0,
+    "Version": "2.99.0.0",
+    "FileName": "PCL2.exe",
+    "Size": 5980160,
+    "Sha256": "6b6e1260cb5a1d6a303855f1c60cab3d0bc1aebba7e40a964180188b271e7386",
+    "SourceUrl": "https://github.com/Meloong-Git/PCL/tree/6b9a50df911c9d68b69b24c979efba477fb14b67"
+  },
+  {
+    "Kind": 1,
+    "Version": "3.16.4",
+    "FileName": "HMCL.exe",
+    "Size": 10907431,
+    "Sha256": "632c2d8873f5a11dd2ffd8418564174995c6a248de5206668c6be114e943e372",
+    "SourceUrl": "https://github.com/HMCL-dev/HMCL/releases/tag/v3.16.4"
+  }
+]

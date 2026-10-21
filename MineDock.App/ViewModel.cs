@@ -29,6 +29,7 @@ public record GameRow(GameRelease Release, bool Installed)
 public class ProjectRow(SearchProject project) : Observable
 {
     public SearchProject Project { get; } = project;
+    internal bool IconLoading { get; set; }
     private ImageSource? _icon;
     public ImageSource? Icon { get => _icon; set => Set(ref _icon, value); }
     public string Title => Project.Title;
@@ -117,6 +118,15 @@ public class MainViewModel : Observable
     public string LauncherLabel => Settings.LauncherExecutable.Length == 0 ? "关联启动器" : Settings.LauncherName + " 已关联";
     public string LauncherTooltip => Settings.LauncherExecutable.Length == 0
         ? "关联 PCL 或 HMCL，自动选择游戏目录" : Settings.LauncherExecutable + "\n点击更换 PCL / HMCL";
+    public string LaunchLauncherLabel => Settings.LauncherExecutable.Length == 0
+        ? "启动启动器" : "启动 " + Settings.LauncherName;
+    public bool CanLaunchLauncher => CanPrepare && !LauncherStarting && Settings.LauncherExecutable.Length > 0;
+    private bool _launcherStarting;
+    public bool LauncherStarting
+    {
+        get => _launcherStarting;
+        set { if (Set(ref _launcherStarting, value)) RefreshActions(); }
+    }
     public string SourceValue { get => Settings.Source.ToString(); set { if (Enum.TryParse<SourceMode>(value, out var v)) { Settings.Source = v; Changed(); } } }
     private bool _loading, _preparing, _running, _showPlan;
     public bool Loading
@@ -124,9 +134,10 @@ public class MainViewModel : Observable
         get => _loading;
         set { if (Set(ref _loading, value)) RefreshPagination(); }
     }
-    public bool Preparing { get => _preparing; set { if (Set(ref _preparing, value)) Changed(nameof(CanPrepare)); } }
-    public bool Running { get => _running; set { if (Set(ref _running, value)) Changed(nameof(CanPrepare)); } }
-    public bool CanPrepare => !Preparing && !Running;
+    public bool Preparing { get => _preparing; set { if (Set(ref _preparing, value)) RefreshActions(); } }
+    public bool Running { get => _running; set { if (Set(ref _running, value)) RefreshActions(); } }
+    public bool CanPrepare => !Preparing && !Running && !LauncherStarting;
+    private void RefreshActions() { Changed(nameof(CanPrepare)); Changed(nameof(CanLaunchLauncher)); }
     public bool ShowPlan { get => _showPlan; set => Set(ref _showPlan, value); }
     public int CurrentPage { get; private set; }
     public int TotalProjects { get; private set; }

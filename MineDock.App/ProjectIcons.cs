@@ -19,7 +19,7 @@ internal static class ProjectIcons
             AutomaticDecompression = DecompressionMethods.All,
             ConnectTimeout = TimeSpan.FromSeconds(8)
         }) { Timeout = TimeSpan.FromSeconds(15) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("MineDock/0.1.0 (Windows desktop)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("MineDock/0.1.3 (Windows desktop)");
         return client;
     }
     public static async Task<BitmapSource?> Load(string url, CancellationToken ct)

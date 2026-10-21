@@ -6,7 +6,7 @@
     <AssemblyName>MineDock</AssemblyName>
     <RootNamespace>MineDock.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ApplicationIcon>Assets\MineDock.ico</ApplicationIcon>
   </PropertyGroup>
@@ -14,9 +14,22 @@
     <ProjectReference Include="..\MineDock.Core\MineDock.Core.csproj" />
     <PackageReference Include="SkiaSharp" Version="4.153.1" />
     <EmbeddedResource Include="Assets\Icons\*.svg" />
+    <EmbeddedResource Include="Assets\Launchers\*" />
+    <EmbeddedResource Include="Assets\Licenses\*" />
+    <EmbeddedResource Include="Assets\Icons\LICENSE" />
+    <EmbeddedResource Include="..\LICENSE" Link="Notices\MineDock-LICENSE.txt" />
+    <EmbeddedResource Include="..\THIRD-PARTY-NOTICES.md" Link="Notices\THIRD-PARTY-NOTICES.md" />
+    <EmbeddedResource Include="..\CHANGELOG.md" Link="Notices\CHANGELOG.md" />
     <Content Include="Assets\Icons\LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Licenses\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <Target Name="CheckBundledLauncherAssets" BeforeTargets="PrepareForBuild">
+    <ItemGroup>
+      <RequiredLauncherAsset Include="Assets\Launchers\PCL2.exe;Assets\Launchers\HMCL.exe;Assets\Launchers\HMCL-3.16.4-corresponding-source.zip;Assets\Launchers\launcher-packages.json" />
+    </ItemGroup>
+    <Error Condition="!Exists('%(RequiredLauncherAsset.Identity)')"
+           Text="Missing bundled launcher asset: %(RequiredLauncherAsset.Identity). Use the complete MineDock source distribution." />
+  </Target>
   <Target Name="ExcludeDebugSymbolsFromPortablePublish" AfterTargets="ComputeFilesToPublish">
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb'" />

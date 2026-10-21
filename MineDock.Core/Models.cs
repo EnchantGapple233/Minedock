@@ -14,6 +14,7 @@ public sealed class Settings
     public string MinecraftRoot { get; set; } = "";
     public string PclExecutable { get; set; } = "";
     public string HmclExecutable { get; set; } = "";
+    public string LauncherJavaExecutable { get; set; } = "";
     public LauncherKind Launcher { get; set; }
     [JsonIgnore] public string LauncherExecutable => Launcher == LauncherKind.Hmcl ? HmclExecutable : PclExecutable;
     [JsonIgnore] public string LauncherName => Launcher == LauncherKind.Hmcl ? "HMCL" : "PCL";

@@ -1,0 +1,30 @@
+{
+  "Version": "0.1.3",
+  "Date": "2026-10-21",
+  "Platform": "Windows 11 x64",
+  "Method": "File/process checks and manual native-window observations with the computer-use skill. Request-count assertions are in the separate automated UI report.",
+  "Passed": 6,
+  "Checks": [
+    "Final single EXE started alone with DOTNET_ROOT and DOTNET_ROOT_X64 removed and fresh runtime extraction cache.",
+    "Official game list and live Modrinth projects, decoded icons, file versions and page controls rendered.",
+    "Native clicks reached mod page two; returning from another resource section restored page two and its rows.",
+    "Mod cache retained the same FetchedAt across the section switch and after normal close.",
+    "Selected navigation option and project retained accent colors at rest after moving the pointer away; hover and pressed-state measurements are in the automated UI report.",
+    "Owned test window closed normally, its process exited, and no application error log appeared."
+  ],
+  "ExitCode": 0,
+  "ExeBytes": 93598834,
+  "ExeSha256": "8342ead7ac6c72e808c4314a22fea0105d3589846c9960e929c4b481f5426e76",
+  "RuntimeCacheFileCount": 392,
+  "Cache": {
+    "Page": 2,
+    "Total": 77495,
+    "ProjectCount": 30,
+    "FetchedAt": "2026-10-21T20:41:39.801113+08:00",
+    "FirstProject": "VeinMiner Hotkey"
+  },
+  "Limitations": [
+    "PCL and HMCL startup was exercised on the earlier 0.1.3 candidate; see single-file-smoke-initial.json for that separate evidence.",
+    "No launcher agreement, account authentication, game launch, full game installation or Windows 10 physical-machine validation was performed in this interaction update."
+  ]
+}

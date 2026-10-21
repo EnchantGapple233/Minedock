@@ -37,6 +37,7 @@ internal static class Program
             try
             {
                 await Verify(window);
+                await CatalogFeatureChecks.Run(CreateWindow, Folder, Check);
                 if (args.Contains("--live"))
                 {
                     new Settings().Save();
@@ -216,6 +217,7 @@ internal static class Program
         Capture(window, "pagination-fixture-light-compact.png");
         App.ApplyTheme("Dark");
         CheckLauncherAssociation(window);
+        await LauncherFeatureChecks.Run(window, Folder, Check);
     }
 
     private static async Task CheckElevation(MainWindow window, Button button)
@@ -238,8 +240,33 @@ internal static class Program
         Check(Lift() == 0 && Shadow() == 0, "Button elevation returns completely to rest");
         var nav = Named<RadioButton>(window, "NavMod");
         var navLift = (TranslateTransform)((Grid)nav.Template.FindName("NavVisual", nav)).RenderTransform;
-        Check(nav.IsChecked == true && navLift.Y < 0 &&
-            ((Border)nav.Template.FindName("NavRail", nav)).Opacity == 1, "Selected navigation remains raised with an accent marker");
+        VisualStateManager.GoToState(nav, "Normal", false);
+        Check(nav.IsChecked == true && navLift.Y == 0 &&
+            ((Border)nav.Template.FindName("NavRail", nav)).Opacity == 1,
+            "Selected navigation rests flat while retaining its color and accent marker");
+        VisualStateManager.GoToState(nav, "MouseOver", true);
+        await Until(() => navLift.Y == -2);
+        Check(((System.Windows.Media.Effects.DropShadowEffect)((Border)nav.Template.FindName("NavSurface", nav)).Effect).Opacity > 0,
+            "Navigation hover raises the option and reveals its shadow");
+        var navHit = nav.InputHitTest(new Point(nav.ActualWidth / 2, nav.ActualHeight - .25)) as DependencyObject;
+        Check(navHit is not null && (navHit == nav || nav.IsAncestorOf(navHit)),
+            "Raised navigation retains its full original hit area");
+        VisualStateManager.GoToState(nav, "Pressed", true);
+        await Until(() => Math.Abs(navLift.Y + .4) < .001);
+        Check(((Border)nav.Template.FindName("NavTint", nav)).Opacity > 0,
+            "Pressing an option lowers it and adds color feedback");
+        VisualStateManager.GoToState(nav, "Normal", true);
+        await Until(() => navLift.Y == 0);
+        Check(((Border)nav.Template.FindName("NavRail", nav)).Opacity == 1 &&
+            ((Border)nav.Template.FindName("NavSurface", nav)).Opacity == 0,
+            "Leaving a selected option removes elevation and shadow without removing selection");
+        var inactive = Named<RadioButton>(window, "NavTasks");
+        VisualStateManager.GoToState(inactive, "MouseOver", true);
+        await Until(() => ((TranslateTransform)((Grid)inactive.Template.FindName("NavVisual", inactive)).RenderTransform).Y == -2);
+        Check(inactive.IsChecked == false &&
+            ((Border)inactive.Template.FindName("NavSurface", inactive)).Opacity == 1,
+            "Unselected options also lift on hover without becoming selected");
+        VisualStateManager.GoToState(inactive, "Normal", false);
         var list = Named<ListBox>(window, "ProjectList");
         list.SelectedIndex = 0;
         window.UpdateLayout();
@@ -247,11 +274,25 @@ internal static class Program
         var item = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
         var selectionRoot = (Grid)item.Template.FindName("SelectionRoot", item);
         var itemLift = (TranslateTransform)selectionRoot.RenderTransform;
-        Check(item.IsSelected && itemLift.Y < 0 &&
+        VisualStateManager.GoToState(item, "Normal", false);
+        Check(item.IsSelected && itemLift.Y == 0 &&
             ((Border)item.Template.FindName("SelectionRail", item)).Opacity == 1,
-            "Selected results remain raised when the keyboard focus is elsewhere");
+            "Selected results rest flat while retaining their selected color");
+        VisualStateManager.GoToState(item, "MouseOver", true);
+        await Until(() => itemLift.Y == -2);
+        Check(((System.Windows.Media.Effects.DropShadowEffect)((Border)item.Template.FindName("SelectionSurface", item)).Effect).Opacity > 0,
+            "Result hover raises the row with a soft shadow");
+        var itemHit = item.InputHitTest(new Point(item.ActualWidth / 2, item.ActualHeight - .25)) as DependencyObject;
+        Check(itemHit is not null && (itemHit == item || item.IsAncestorOf(itemHit)),
+            "Raised result rows retain a stable lower-edge hit area");
+        VisualStateManager.GoToState(item, "Normal", true);
+        await Until(() => itemLift.Y == 0);
+        Check(((Border)item.Template.FindName("SelectionRail", item)).Opacity == 1 &&
+            ((Border)item.Template.FindName("SelectionSurface", item)).Opacity == 0,
+            "Leaving a selected result restores rest and preserves its selection");
         list.SelectedIndex = 1;
-        await Task.Delay(180);
+        await Until(() => !item.IsSelected && ((TranslateTransform)selectionRoot.RenderTransform).Y == 0 &&
+            ((Border)item.Template.FindName("SelectionRail", item)).Opacity == 0);
         Check(!item.IsSelected && ((TranslateTransform)selectionRoot.RenderTransform).Y == 0 &&
             ((Border)item.Template.FindName("SelectionRail", item)).Opacity == 0,
             "Changing selection removes the previous result's elevation");

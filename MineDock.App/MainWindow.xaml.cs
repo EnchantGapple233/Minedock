@@ -72,17 +72,20 @@ public partial class MainWindow : Window
     }
     private async Task LoadGameList()
     {
+        var navigation = _navigation;
         Vm.Loading = true;
         await Guard(async () =>
         {
             _releases = await _games.Releases();
+            var filterGame = Vm.FilterGame;
             Vm.GameFilters.Clear(); Vm.GameFilters.Add(new("", "全部游戏版本"));
             foreach (var game in _releases) Vm.GameFilters.Add(new(game.Id, game.Id));
+            Vm.FilterGame = Vm.GameFilters.Any(c => c.Value == filterGame) ? filterGame : "";
             FilterGames();
             Vm.SelectedGame ??= Vm.Games.FirstOrDefault();
-            Vm.Status = $"{_releases.Count} 个正式版本";
+            if (Vm.IsGame) Vm.Status = $"{_releases.Count} 个正式版本";
         });
-        Vm.Loading = false;
+        if (navigation == _navigation) Vm.Loading = false;
     }
     private void FilterGames()
     {
@@ -174,17 +177,22 @@ public partial class MainWindow : Window
     {
         if (!_ready || sender is not RadioButton button) return;
         var next = Enum.Parse<PageKind>(button.Tag.ToString()!);
-        var navigation = ++_navigation;
         if (next == Vm.Page) return;
+        var navigation = ++_navigation;
         if (Vm.IsCatalog)
-            _filterStates[Vm.Page] = new(Vm.Query, Vm.FilterGame, Vm.FilterLoader, Vm.FilterCategory, Vm.FilterFeature, Vm.FilterExtra, Vm.Sort);
+        {
+            _filterStates[Vm.Page] = CurrentFilters;
+            SaveCurrentCatalog();
+        }
         _search?.Cancel();
+        ++_projectSelection;
         Vm.Loading = false;
         _suppress = true;
         Vm.Page = next;
         Vm.Query = "";
         Vm.Error = "";
         Vm.SelectedProject = null;
+        Vm.SelectedVersion = null;
         Vm.ProjectVersions.Clear();
         Vm.Projects.Clear();
         Vm.SetCatalogPage(0, 0);
@@ -195,27 +203,33 @@ public partial class MainWindow : Window
         {
             await Guard(async () =>
             {
-                if (_categories.Count == 0) _categories = await _content.Categories();
-                if (_loaderTags.Count == 0) _loaderTags = await _content.LoaderTags();
+                if (await RestoreCatalog(next, navigation)) return;
+                await EnsureCatalogTags();
                 if (navigation != _navigation) return;
-                PopulateFilters();
-                if (_filterStates.TryGetValue(next, out var state))
+                _suppress = true;
+                try
                 {
-                    Vm.Query = state.Query; Vm.FilterGame = state.Game; Vm.FilterLoader = state.Loader;
-                    Vm.FilterCategory = state.Category; Vm.FilterFeature = state.Feature; Vm.FilterExtra = state.Extra; Vm.Sort = state.Sort;
+                    PopulateFilters();
+                    if (_filterStates.TryGetValue(next, out var state)) ApplyFilters(state);
+                    else
+                    {
+                        Vm.FilterGame = Vm.Target?.GameVersion ?? "";
+                        Vm.FilterLoader = next is PageKind.Mod or PageKind.Modpack && Vm.Target?.Loader is { } l && l != "vanilla" ? l : "";
+                        Vm.Sort = "downloads";
+                    }
                 }
-                else
-                {
-                    Vm.FilterGame = Vm.Target?.GameVersion ?? "";
-                    Vm.FilterLoader = next is PageKind.Mod or PageKind.Modpack && Vm.Target?.Loader is { } l && l != "vanilla" ? l : "";
-                    Vm.Sort = "downloads";
-                }
+                finally { _suppress = false; }
                 await Search();
             });
         }
-        else if (Vm.IsJava) await LoadJava();
+        else if (Vm.IsJava)
+        {
+            if (_allJavaMajors.Count == 0) await LoadJava();
+            else { RefreshJavaDirectories(); ApplyJavaFilters(); Vm.Status = "Eclipse Adoptium · Windows x64"; }
+        }
         else RefreshHistory();
-        await Dispatcher.InvokeAsync(EnsureFilterSelections, DispatcherPriority.Loaded);
+        if (navigation == _navigation)
+            await Dispatcher.InvokeAsync(EnsureFilterSelections, DispatcherPriority.Loaded);
     }
     private void EnsureFilterSelections()
     {
@@ -270,6 +284,7 @@ public partial class MainWindow : Window
         var request = _search;
         var token = request.Token;
         var page = Vm.Page;
+        var context = CatalogContext;
         var projectType = Vm.ProjectType;
         var criteria = new CatalogState(Vm.Query.Trim(), Vm.FilterGame, Vm.FilterLoader, Vm.FilterCategory,
             Vm.FilterFeature, Vm.FilterExtra, Vm.Sort);
@@ -290,18 +305,21 @@ public partial class MainWindow : Window
                 if ((long)(targetPage - 1) * ContentService.SearchPageSize >= result.Total && result.Total > 0)
                     throw new InvalidOperationException("搜索结果正在变化，请刷新后重试。");
             }
-            if (token.IsCancellationRequested || Vm.Page != page) return;
+            if (token.IsCancellationRequested || Vm.Page != page || CatalogContext != context) return;
             Vm.Projects.Clear(); Vm.ProjectVersions.Clear(); Vm.SelectedProject = null;
             foreach (var project in result.Projects)
             {
                 var row = new ProjectRow(project);
                 Vm.Projects.Add(row);
-                _ = LoadProjectIcon(row, token);
+                _ = LoadProjectIcon(row, _catalogLifetime.Token);
             }
             _activeCatalogSearch = criteria;
+            _activeCatalogContext = context;
+            _activeCatalogFetchedAt = DateTimeOffset.UtcNow;
             Vm.SetCatalogPage(targetPage, result.Total);
-            Vm.Status = result.Total == 0 ? "没有匹配结果" : $"{result.Total:N0} 个项目 · 第 {Vm.CurrentPage:N0} / {Vm.TotalPages:N0} 页";
+            UpdateCatalogStatus();
             Vm.SelectedProject = Vm.Projects.FirstOrDefault();
+            SaveCurrentCatalog();
             if (Vm.SelectedProject is not null) ProjectList.ScrollIntoView(Vm.SelectedProject);
             if (SystemParameters.ClientAreaAnimation)
                 CatalogResults.BeginAnimation(OpacityProperty, new DoubleAnimation(0.55, 1, TimeSpan.FromMilliseconds(140)));
@@ -316,8 +334,14 @@ public partial class MainWindow : Window
     }
     private static async Task LoadProjectIcon(ProjectRow row, CancellationToken ct)
     {
-        var image = await ProjectIcons.Load(row.IconUrl, ct);
-        if (!ct.IsCancellationRequested) row.Icon = image;
+        if (row.Icon is not null || row.IconLoading) return;
+        row.IconLoading = true;
+        try
+        {
+            var image = await ProjectIcons.Load(row.IconUrl, ct);
+            if (!ct.IsCancellationRequested) row.Icon = image;
+        }
+        finally { row.IconLoading = false; }
     }
     private async void SearchCatalog(object sender, RoutedEventArgs e) => await Guard(() => Search());
     private async void SearchKeyDown(object sender, KeyEventArgs e)
@@ -349,18 +373,7 @@ public partial class MainWindow : Window
     private async void ProjectSelected(object sender, SelectionChangedEventArgs e)
     {
         if (!_ready || _suppress) return;
-        var project = Vm.SelectedProject;
-        var request = ++_projectSelection;
-        Vm.ProjectVersions.Clear();
-        if (project is null) return;
-        await Guard(async () =>
-        {
-            var loader = Vm.Page is PageKind.Mod or PageKind.Modpack or PageKind.Shader ? Vm.FilterLoader : "";
-            var versions = await _content.Versions(project.Project.Id, Vm.FilterGame, loader);
-            if (request != _projectSelection || project != Vm.SelectedProject) return;
-            foreach (var version in versions) Vm.ProjectVersions.Add(version);
-            Vm.SelectedVersion = Vm.ProjectVersions.FirstOrDefault(v => v.VersionType == "release") ?? Vm.ProjectVersions.FirstOrDefault();
-        });
+        await UpdateProjectSelection();
     }
     private void GameSearchChanged(object sender, RoutedEventArgs e) { if (_ready && Vm.IsGame && !_suppress) FilterGames(); }
     private async void GameSelected(object sender, SelectionChangedEventArgs e)
@@ -486,15 +499,17 @@ public partial class MainWindow : Window
     }
     private async Task LoadJava()
     {
+        var navigation = _navigation;
         Vm.Loading = true;
         await Guard(async () =>
         {
             _allJavaMajors = await _java.Majors();
+            if (navigation != _navigation || !Vm.IsJava) return;
             RefreshJavaDirectories();
             ApplyJavaFilters();
             Vm.Status = "Eclipse Adoptium · Windows x64";
         });
-        Vm.Loading = false;
+        if (navigation == _navigation && Vm.IsJava) Vm.Loading = false;
     }
     private void RefreshJavaDirectories()
     {
@@ -633,7 +648,11 @@ public partial class MainWindow : Window
     private async void RefreshPage(object sender, RoutedEventArgs e)
     {
         if (Vm.IsGame) { _games.Invalidate(); await LoadGameList(); }
-        else if (Vm.IsCatalog) await Guard(() => Search());
+        else if (Vm.IsCatalog)
+        {
+            RefreshCatalogVersions();
+            await Guard(() => Search(Vm.CurrentPage));
+        }
         else if (Vm.IsJava) await LoadJava();
         else RefreshHistory();
     }
@@ -655,6 +674,8 @@ public partial class MainWindow : Window
     private void OnClosing(object? sender, CancelEventArgs e)
     {
         if (Vm.Running) { Vm.Error = "请先取消当前任务并等待回滚完成，再关闭 MineDock。"; e.Cancel = true; return; }
+        SaveCurrentCatalog();
+        _catalogLifetime.Cancel();
         _search?.Cancel(); Vm.Settings.Save(); _network.Dispose();
     }
     private async Task CaptureUi()

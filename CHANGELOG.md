@@ -1,5 +1,35 @@
 # Changelog / 更新日志
 
+## [0.1.3] - 2026-10-21
+
+### 中文
+
+- 增加侧栏启动入口，可直接打开已关联的 PCL / HMCL，使用启动器所在目录作为工作目录。
+- 支持 HMCL JAR，通过 Java 17 或更高版本启动；可识别 MineDock 安装的 Java、已选 Java、JAVA_HOME、JRE_HOME 与 PATH，缺少运行环境时可手动选择。
+- 内置原样的 PCL 2.99.0.0 和 HMCL 3.16.4 官方 EXE，支持在工具内选择目录、离线安装并自动关联对应 `.minecraft`。
+- 安装时核对大小、SHA-256 与启动器身份；相同文件直接复用，不覆盖已有不同版本，失败或取消会清理临时文件。
+- 安装任务执行期间禁止打开或安装启动器；启动过程中防止重复点击。
+- 提供自带 .NET 运行时的 Windows x64 单 EXE，包含启动器、图标、原生组件、许可证与可导出的 HMCL / HMCLauncher 对应源码。
+- 增加许可与源码窗口，保留第三方原始声明及 HMCL 附加条款；更正此前将 PCL 许可描述为 GPL 的错误。
+- 增加离线安装、启动参数、文件保护、实际弹窗流程、明暗主题与最小窗口布局检查。
+- 将侧栏选项和结果行的上浮改为由鼠标悬停控制：轻微上移并出现柔和阴影，移开后平滑落下，点击选中后保留强调色；按下提供回落与颜色反馈，点击范围保持稳定。
+- 为模组、整合包、光影和材质包分别保存列表缓存，返回栏目时恢复筛选、页码、选中项目、文件版本和滚动位置；复用已获取的图标、标签和最近查看的文件版本。
+- 列表写入本地缓存，24 小时内重新打开程序可恢复；刷新与新搜索重新请求，目标游戏变化时不使用旧目标列表。缓存异常不影响浏览，并防止快速切换时旧响应覆盖当前栏目。
+
+### English
+
+- Open the associated PCL / HMCL directly from the sidebar, using the launcher's folder as its working directory.
+- Launch HMCL JAR files with Java 17 or later. Discover a selected runtime, MineDock-installed Java, JAVA_HOME, JRE_HOME, or PATH; allow manual runtime selection when needed.
+- Bundle unmodified official PCL 2.99.0.0 and HMCL 3.16.4 executables for offline installation, directory selection, and automatic `.minecraft` association.
+- Verify payload sizes, SHA-256 hashes, and launcher identities. Reuse identical files, preserve different existing launchers, and clean temporary files after failure or cancellation.
+- Disable launcher actions during content installation and prevent repeated clicks during startup.
+- Provide a self-contained Windows x64 single EXE containing the launchers, icons, native components, licenses, and exportable HMCL / HMCLauncher corresponding source.
+- Add a license and source window, preserve upstream notices and additional terms, and correct the earlier inaccurate description of PCL as GPL-licensed.
+- Add coverage for offline installation, launch arguments, file protection, the real modal workflow, themes, and minimum-window layout.
+- Raise navigation options and result rows on hover with soft shadows, then return them smoothly to rest on pointer leave. Keep selected colors after clicking, add pressed feedback, and preserve stable hit targets.
+- Cache each Modrinth section separately and restore filters, pagination, selection, file-version choice, and scroll position. Reuse loaded icons, tags, and recently viewed version lists.
+- Persist lists locally for 24 hours, including across restarts. Refresh and new searches request new data; changed game targets do not reuse old-target lists. Cache failures remain nonfatal, and late responses cannot replace the current section.
+
 ## [0.1.2] - 2026-10-21
 
 ### 中文
@@ -71,3 +101,4 @@
 [0.1.0]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.0
 [0.1.1]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.1
 [0.1.2]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.2
+[0.1.3]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.3
