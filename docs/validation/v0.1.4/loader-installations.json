@@ -1,0 +1,74 @@
+[
+  {
+    "Kind": "fabric",
+    "Game": "1.21.1",
+    "Loader": "0.19.5",
+    "Versions": 255,
+    "Files": 81,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.21.1-fabric-d66738\\MineDock-test-1.21.1-fabric-d66738.json"
+  },
+  {
+    "Kind": "quilt",
+    "Game": "1.21.1",
+    "Loader": "0.30.1",
+    "Versions": 307,
+    "Files": 84,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.21.1-quilt-b78725\\MineDock-test-1.21.1-quilt-b78725.json"
+  },
+  {
+    "Kind": "forge",
+    "Game": "1.21.1",
+    "Loader": "52.1.20",
+    "Versions": 69,
+    "Files": 75,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.21.1-forge-1895a9\\MineDock-test-1.21.1-forge-1895a9.json"
+  },
+  {
+    "Kind": "neoforge",
+    "Game": "1.21.1",
+    "Loader": "21.1.264",
+    "Versions": 259,
+    "Files": 75,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.21.1-neoforge-b97acd\\MineDock-test-1.21.1-neoforge-b97acd.json"
+  },
+  {
+    "Kind": "optifine",
+    "Game": "1.21.1",
+    "Loader": "HD_U_J1",
+    "Versions": 8,
+    "Files": 76,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.21.1-optifine-9810c8\\MineDock-test-1.21.1-optifine-9810c8.json"
+  },
+  {
+    "Kind": "legacy-fabric",
+    "Game": "1.8.9",
+    "Loader": "0.20.1",
+    "Versions": 76,
+    "Files": 49,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.8.9-legacy-fabric-04e6cb\\MineDock-test-1.8.9-legacy-fabric-04e6cb.json"
+  },
+  {
+    "Kind": "liteloader",
+    "Game": "1.12.2",
+    "Loader": "1.12.2-SNAPSHOT",
+    "Versions": 1,
+    "Files": 41,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.12.2-liteloader-e24795\\MineDock-test-1.12.2-liteloader-e24795.json"
+  },
+  {
+    "Kind": "forge",
+    "Game": "1.12.2",
+    "Loader": "14.23.5.2864",
+    "Versions": 355,
+    "Files": 61,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.12.2-forge\\MineDock-test-1.12.2-forge.json"
+  },
+  {
+    "Kind": "neoforge",
+    "Game": "1.20.1",
+    "Loader": "47.1.105",
+    "Versions": 60,
+    "Files": 125,
+    "Profile": "C:\\Users\\Administrator\\Documents\\Codex\\2026-10-20\\minecraft-ui-forge-neoforge-fabric-fabric\\work\\v014-install-1\\.minecraft\\versions\\MineDock-test-1.20.1-neoforge\\MineDock-test-1.20.1-neoforge.json"
+  }
+]

@@ -34,7 +34,8 @@ public sealed class InstallEngine(Network network)
                 Interlocked.Exchange(ref lastReport, Environment.TickCount64);
                 progress?.Report(new("下载并校验", message, Volatile.Read(ref done), total, Interlocked.Read(ref bytes), plan.Bytes));
             }
-            var remote = plan.Files.Where(f => f.Action != FileAction.Text).GroupBy(f => f.Url + "|" + f.Hash).ToList();
+            var remote = plan.Files.Where(f => f.Action is FileAction.Download or FileAction.ExtractJava)
+                .GroupBy(f => f.Url + "|" + f.Hash).ToList();
             await Parallel.ForEachAsync(remote, new ParallelOptions { MaxDegreeOfParallelism = 6, CancellationToken = ct }, async (group, token) =>
             {
                 var first = group.First();
@@ -46,9 +47,19 @@ public sealed class InstallEngine(Network network)
                 Report(first.Label, true);
             });
             progress?.Report(new("准备写入", "所有下载已校验，正在提交安装。", done, total, bytes, plan.Bytes));
-            for (var index = 0; index < plan.Files.Count; index++)
+            var initialCount = plan.Files.Count;
+            var loaderStaged = plan.Loader is null;
+            for (var index = 0; index < plan.Files.Count || !loaderStaged; index++)
             {
                 ct.ThrowIfCancellationRequested();
+                if (index == initialCount && !loaderStaged)
+                {
+                    var generated = await LoaderInstaller.Stage(plan, Path.Combine(transaction, "loader-staging"), progress, ct);
+                    foreach (var generatedFile in generated) plan.Add(generatedFile);
+                    loaderStaged = true;
+                    total = plan.Files.Count;
+                    if (index >= total) break;
+                }
                 var file = plan.Files[index];
                 progress?.Report(new("安装文件", file.Label, index, total, bytes, plan.Bytes));
                 if (file.Action == FileAction.ExtractJava)
@@ -87,6 +98,8 @@ public sealed class InstallEngine(Network network)
                 }
                 if (file.Action == FileAction.Download && file.CachePath.Equals(file.Destination, StringComparison.OrdinalIgnoreCase)) continue;
                 if (file.Action == FileAction.Download && System.IO.File.Exists(file.Destination) && await Network.Valid(file.Destination, file, ct)) continue;
+                if (file.Action == FileAction.Local && !await Network.Valid(file.CachePath, file, ct))
+                    throw new InvalidDataException("加载器输出在提交前发生变化。");
                 Directory.CreateDirectory(Path.GetDirectoryName(file.Destination)!);
                 string? backup = null;
                 if (System.IO.File.Exists(file.Destination))

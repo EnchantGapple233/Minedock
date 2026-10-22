@@ -9,6 +9,48 @@
  WindowStyle="None" ResizeMode="CanResize" Loaded="OnLoaded" Closing="OnClosing">
  <WindowChrome.WindowChrome><WindowChrome CaptionHeight="42" ResizeBorderThickness="6" CornerRadius="8" GlassFrameThickness="0"/></WindowChrome.WindowChrome>
  <Window.Resources>
+  <Style x:Key="UpdateMenuItem" TargetType="MenuItem">
+   <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+   <Setter Property="Background" Value="Transparent"/>
+   <Setter Property="Padding" Value="10,9"/>
+   <Setter Property="MinHeight" Value="36"/>
+   <Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="MenuItem">
+    <Border x:Name="MenuRow" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+     <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="22"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <local:Icon x:Name="MenuCheck" Kind="check" Width="15" Height="15" Foreground="{TemplateBinding Foreground}" Visibility="Collapsed"/>
+      <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center"
+                        TextElement.Foreground="{TemplateBinding Foreground}" RecognizesAccessKey="True"/>
+     </Grid>
+    </Border>
+    <ControlTemplate.Triggers>
+     <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="MenuRow" Property="Background" Value="{DynamicResource RaisedBrush}"/></Trigger>
+     <Trigger Property="IsChecked" Value="True"><Setter TargetName="MenuCheck" Property="Visibility" Value="Visible"/></Trigger>
+     <Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="UpdateMenu" TargetType="ContextMenu">
+   <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+   <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+   <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Padding" Value="4"/>
+   <Setter Property="MinWidth" Value="250"/>
+   <Setter Property="ItemContainerStyle" Value="{StaticResource UpdateMenuItem}"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ContextMenu">
+    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="6">
+     <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+    </Border>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key="UpdateMenuSeparator" TargetType="Separator">
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Separator">
+    <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="10,4"/>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style x:Key="Nav" TargetType="RadioButton">
    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/><Setter Property="Margin" Value="12,4"/>
    <Setter Property="Height" Value="44"/><Setter Property="Cursor" Value="Hand"/>
@@ -96,9 +138,25 @@
    <StackPanel Orientation="Horizontal" Margin="18,0">
     <local:Icon Kind="box" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}"/>
     <TextBlock Text="MineDock" Margin="9,0,12,0" FontWeight="SemiBold" FontSize="12"/>
-    <TextBlock Text="0.1.3" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
+    <TextBlock Text="0.1.4" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
    </StackPanel>
    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True" Margin="0,0,5,0">
+    <TextBlock Text="{Binding UpdateStatus}" ToolTip="{Binding UpdateStatus}" MaxWidth="300" TextTrimming="CharacterEllipsis" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,0,10,0"/>
+    <Button x:Name="RefreshInterfaceButton" Style="{StaticResource IconButton}" Click="RefreshInterface" IsEnabled="{Binding CanRefresh}"
+            ToolTip="刷新界面" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="刷新界面">
+     <local:Icon Kind="refresh-cw" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}"/>
+    </Button>
+    <Button x:Name="UpdateButton" Style="{StaticResource IconButton}" Click="OpenUpdateMenu" ToolTip="{Binding UpdateStatus}" AutomationProperties.Name="MineDock 更新">
+     <local:Icon Kind="download" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}"/>
+     <Button.ContextMenu><ContextMenu Style="{StaticResource UpdateMenu}">
+      <MenuItem x:Name="UpdateStatusItem" IsEnabled="False">
+       <MenuItem.Header><TextBlock Text="{Binding UpdateStatus}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" MaxWidth="310"/></MenuItem.Header>
+      </MenuItem>
+      <Separator Style="{StaticResource UpdateMenuSeparator}"/>
+      <MenuItem x:Name="CheckUpdatesItem" Header="检查更新" Click="CheckForUpdates"/>
+      <MenuItem x:Name="AutomaticUpdatesItem" Header="自动下载并更新" IsCheckable="True" IsChecked="{Binding AutomaticUpdates, Mode=TwoWay}" Click="AutomaticUpdatesChanged"/>
+     </ContextMenu></Button.ContextMenu>
+    </Button>
     <Button x:Name="NoticesButton" Style="{StaticResource IconButton}" Click="OpenNotices" ToolTip="许可与源码" AutomationProperties.Name="许可与源码"><local:Icon Kind="shield-check" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}"/></Button>
     <Button x:Name="BackgroundSettingsButton" Style="{StaticResource IconButton}" Click="OpenBackgroundSettings" ToolTip="自定义背景" AutomationProperties.Name="自定义背景"><local:Icon Kind="image" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}"/></Button>
     <Button Style="{StaticResource IconButton}" Click="ToggleTheme" ToolTip="切换明暗主题"><local:Icon Kind="sun" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}"/></Button>
@@ -164,7 +222,7 @@
      </StackPanel>
      <StackPanel Grid.Row="2" Margin="20,12,20,14" VerticalAlignment="Bottom">
       <TextBlock Text="游戏来源" Style="{StaticResource Caption}"/>
-      <ComboBox ItemsSource="{Binding SourceChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding SourceValue}" SelectionChanged="SourceChanged" FontSize="11" IsEnabled="{Binding CanPrepare}"/>
+      <ComboBox x:Name="SourceBox" ItemsSource="{Binding SourceChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding SourceValue}" SelectionChanged="SourceChanged" FontSize="11" IsEnabled="{Binding CanPrepare}"/>
       <Button x:Name="LauncherButton" Click="AssociateLauncher" ToolTip="{Binding LauncherTooltip}" IsEnabled="{Binding CanPrepare}" Margin="0,12,0,0" HorizontalContentAlignment="Left">
        <StackPanel Orientation="Horizontal"><local:Icon Kind="external-link" Width="15" Height="15" Foreground="{DynamicResource MutedBrush}"/><TextBlock Text="{Binding LauncherLabel}" Margin="9,0,0,0" FontSize="12"/></StackPanel>
       </Button>
@@ -216,7 +274,7 @@
       </StackPanel>
       <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
        <TextBlock Text="{Binding Status}" Foreground="{DynamicResource MutedBrush}" FontSize="12" MaxWidth="320" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
-       <Button x:Name="RefreshPageButton" Style="{StaticResource IconButton}" Click="RefreshPage" ToolTip="刷新当前栏目"><local:Icon Kind="refresh-cw" Width="17" Height="17" Foreground="{DynamicResource MutedBrush}"/></Button>
+       <Button x:Name="RefreshPageButton" Style="{StaticResource IconButton}" Click="RefreshPage" IsEnabled="{Binding CanRefresh}" ToolTip="刷新当前栏目"><local:Icon Kind="refresh-cw" Width="17" Height="17" Foreground="{DynamicResource MutedBrush}"/></Button>
       </StackPanel>
      </Grid>
      <Grid Grid.Row="1" Visibility="{Binding IsGame, Converter={StaticResource BoolVisibility}}">
@@ -224,37 +282,54 @@
       <Grid>
        <Grid.RowDefinitions><RowDefinition Height="46"/><RowDefinition Height="35"/><RowDefinition Height="*"/></Grid.RowDefinitions>
        <Grid>
-        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="125"/></Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="132"/><ColumnDefinition Width="8"/><ColumnDefinition Width="116"/></Grid.ColumnDefinitions>
         <Grid><TextBox x:Name="GameSearch" Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" TextChanged="GameSearchChanged" Padding="35,8,10,8" AutomationProperties.Name="搜索游戏版本"/><local:Icon Kind="search" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"/></Grid>
-        <ComboBox Grid.Column="2" ItemsSource="{Binding InstalledChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding InstalledFilter}" SelectionChanged="GameSearchChanged"/>
+        <ComboBox x:Name="GameTypeBox" Grid.Column="2" ItemsSource="{Binding GameTypeChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding GameType}" SelectionChanged="GameSearchChanged"/>
+        <ComboBox Grid.Column="4" ItemsSource="{Binding InstalledChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding InstalledFilter}" SelectionChanged="GameSearchChanged"/>
        </Grid>
        <Grid Grid.Row="1" Margin="13,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="100"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Text="版本" Style="{StaticResource Caption}" Margin="0"/><TextBlock Grid.Column="1" Text="发布日期" Style="{StaticResource Caption}" Margin="0"/><TextBlock Grid.Column="2" Text="状态" Style="{StaticResource Caption}" Margin="0"/></Grid>
-       <ListBox Grid.Row="2" ItemsSource="{Binding Games}" SelectedItem="{Binding SelectedGame}" SelectionChanged="GameSelected" AutomationProperties.Name="Minecraft 正式版本">
+       <ListBox x:Name="GameList" Grid.Row="2" ItemsSource="{Binding Games}" SelectedItem="{Binding SelectedGame}" SelectionChanged="GameSelected" AutomationProperties.Name="Minecraft 版本">
         <ListBox.ItemTemplate><DataTemplate><Grid>
          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="100"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions>
-         <StackPanel Orientation="Horizontal"><local:Icon Kind="box" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}" Margin="0,0,12,0"/><TextBlock Text="{Binding Id}" FontWeight="SemiBold"/></StackPanel>
+         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="29"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><local:Icon Kind="box" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Left"/><TextBlock Grid.Column="1" Text="{Binding Id}" ToolTip="{Binding Id}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold"/></Grid>
          <TextBlock Grid.Column="1" Text="{Binding Date}" FontSize="11" Foreground="{DynamicResource MutedBrush}"/>
          <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource MutedBrush}"/>
         </Grid></DataTemplate></ListBox.ItemTemplate>
        </ListBox>
-       <TextBlock Grid.Row="2" Text="没有匹配的游戏版本" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Visibility="{Binding Games.Count, Converter={StaticResource EmptyVisibility}}" IsHitTestVisible="False"/>
+       <StackPanel x:Name="GameEmptyState" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="430" Margin="18"
+                   Visibility="{Binding Games.Count, Converter={StaticResource EmptyVisibility}}">
+        <local:Icon Kind="blocks" Width="26" Height="26" HorizontalAlignment="Center" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,14"/>
+        <TextBlock x:Name="GameEmptyMessage" Text="{Binding GameListMessage}" Foreground="{DynamicResource TextBrush}" TextAlignment="Center" TextWrapping="Wrap"/>
+        <TextBlock Text="{Binding GameListError}" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextAlignment="Center" TextWrapping="Wrap" Margin="0,9,0,0"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+         <Button x:Name="RetryGameListButton" Style="{StaticResource IconButton}" Click="RefreshPage" IsEnabled="{Binding CanRefresh}"
+                 ToolTip="重新获取游戏版本" AutomationProperties.Name="重新获取游戏版本">
+          <local:Icon Kind="refresh-cw" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+         </Button>
+         <Button x:Name="ClearGameFiltersButton" Click="ClearGameFilters" Margin="8,0,0,0" Visibility="{Binding CanClearGameFilters, Converter={StaticResource BoolVisibility}}"
+                 ToolTip="清除搜索、类型及安装状态筛选" AutomationProperties.Name="显示全部游戏版本">
+          <StackPanel Orientation="Horizontal"><local:Icon Kind="x" Width="15" Height="15" Foreground="{DynamicResource MutedBrush}" Margin="0,0,6,0"/><TextBlock Text="显示全部版本" FontSize="12"/></StackPanel>
+         </Button>
+        </StackPanel>
+       </StackPanel>
       </Grid>
       <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" Padding="22,0,0,0">
        <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
         <TextBlock Text="安装配置" FontSize="15" FontWeight="SemiBold" Margin="0,4,0,24"/>
         <TextBlock Text="Minecraft" Style="{StaticResource Caption}"/>
-        <TextBlock Text="{Binding SelectedGame.Id, TargetNullValue=选择版本}" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,23"/>
+        <TextBlock Text="{Binding SelectedGame.Id, TargetNullValue=选择版本}" FontSize="20" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,23"/>
         <TextBlock Text="主加载器" Style="{StaticResource Caption}"/>
-        <ComboBox ItemsSource="{Binding GameLoaderChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding GameLoader}" SelectionChanged="LoaderKindChanged"/>
-        <StackPanel Visibility="{Binding IsFabric, Converter={StaticResource BoolVisibility}}" Margin="0,18,0,0">
-         <TextBlock Text="Fabric Loader" Style="{StaticResource Caption}"/>
-         <ComboBox ItemsSource="{Binding Loaders}" DisplayMemberPath="Version" SelectedItem="{Binding SelectedLoader}" SelectionChanged="LoaderSelected"/>
-         <CheckBox Content="补齐 Fabric API" IsChecked="{Binding FabricApi}" Margin="0,17,0,0"/>
+        <ComboBox x:Name="LoaderKindBox" ItemsSource="{Binding GameLoaderChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding GameLoader}" SelectionChanged="LoaderKindChanged"/>
+        <StackPanel Visibility="{Binding HasLoader, Converter={StaticResource BoolVisibility}}" Margin="0,18,0,0">
+         <TextBlock Text="{Binding LoaderLabel}" Style="{StaticResource Caption}"/>
+         <ComboBox x:Name="LoaderVersionBox" ItemsSource="{Binding Loaders}" DisplayMemberPath="Display" SelectedItem="{Binding SelectedLoader}" SelectionChanged="LoaderSelected" IsEnabled="{Binding LoaderLoading, Converter={StaticResource Not}}"/>
+         <TextBlock Text="{Binding LoaderStatus}" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0"/>
+         <CheckBox Content="补齐 Fabric API" IsChecked="{Binding FabricApi}" Visibility="{Binding IsFabric, Converter={StaticResource BoolVisibility}}" Margin="0,17,0,0"/>
         </StackPanel>
         <TextBlock Text="版本名称" Style="{StaticResource Caption}" Margin="0,22,0,7"/>
         <TextBox x:Name="VersionName" Text="{Binding NewId, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="新建版本名称"/>
         <Grid Margin="0,19,0,20"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="所需 Java" FontSize="12" Foreground="{DynamicResource MutedBrush}"/><TextBlock Grid.Column="1" Text="{Binding JavaRequirement}" Foreground="{DynamicResource AccentBrush}" FontSize="12"/></Grid>
-        <Button Style="{StaticResource PrimaryButton}" Click="PrepareGame" IsEnabled="{Binding CanPrepare}"><StackPanel Orientation="Horizontal"><local:Icon Kind="plus" Width="17" Height="17" Foreground="{DynamicResource AccentInkBrush}" Margin="0,0,8,0"/><TextBlock Text="创建安装计划" Foreground="{DynamicResource AccentInkBrush}"/></StackPanel></Button>
+        <Button x:Name="PrepareGameButton" Style="{StaticResource PrimaryButton}" Click="PrepareGame" IsEnabled="{Binding CanPrepareGame}"><StackPanel Orientation="Horizontal"><local:Icon Kind="plus" Width="17" Height="17" Foreground="{DynamicResource AccentInkBrush}" Margin="0,0,8,0"/><TextBlock Text="创建安装计划" Foreground="{DynamicResource AccentInkBrush}"/></StackPanel></Button>
         <Button Click="DownloadGameJar" IsEnabled="{Binding CanPrepare}" Margin="0,9,0,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="download" Width="16" Height="16" Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0"/><TextBlock Text="仅下载客户端 JAR" FontSize="12"/></StackPanel></Button>
         <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="6" Padding="12" Margin="0,23,0,0"><StackPanel><StackPanel Orientation="Horizontal"><local:Icon Kind="shield-check" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,0,7,0"/><TextBlock Text="PCL / HMCL 兼容" FontSize="12"/></StackPanel><TextBlock Text="标准版本结构 · 文件校验" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,8,0,0"/></StackPanel></Border>
        </StackPanel></ScrollViewer>

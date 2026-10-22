@@ -10,10 +10,25 @@ namespace MineDock.App;
 
 public partial class App : Application
 {
+    private readonly bool _startMainWindow = true;
     private Mutex? _instanceMutex;
+    public App() { }
+    public App(bool startMainWindow) => _startMainWindow = startMainWindow;
     public static bool IsDarkTheme { get; private set; } = true;
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (!_startMainWindow) { base.OnStartup(e); return; }
+        if (e.Args is ["--apply-update", var request])
+        {
+            try { Shutdown(Task.Run(() => UpdateService.Apply(request)).GetAwaiter().GetResult()); }
+            catch (Exception ex)
+            {
+                try { File.WriteAllText(Path.ChangeExtension(request, "error.log"), ex.ToString()); }
+                catch (IOException) { }
+                Shutdown(1);
+            }
+            return;
+        }
         base.OnStartup(e);
         var identity = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(Settings.DataDirectory).ToUpperInvariant())))[..24];
         _instanceMutex = new Mutex(false, @"Local\MineDock-" + identity);
@@ -37,6 +52,14 @@ public partial class App : Application
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+        var readyIndex = Array.IndexOf(e.Args, "--update-ready");
+        if (readyIndex >= 0 && readyIndex + 1 < e.Args.Length)
+        {
+            var ready = Path.GetFullPath(e.Args[readyIndex + 1]);
+            var updateRoot = Path.GetFullPath(Path.Combine(Settings.DataDirectory, "updates")) + Path.DirectorySeparatorChar;
+            if (ready.StartsWith(updateRoot, StringComparison.OrdinalIgnoreCase))
+                File.WriteAllText(ready, UpdateService.CurrentVersion);
+        }
     }
     protected override void OnExit(ExitEventArgs e)
     {

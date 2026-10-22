@@ -8,28 +8,30 @@ A Windows desktop downloader and installer for Minecraft Java Edition, built wit
 
 ## Downloads
 
-Current version: **v0.1.3**, available as a self-contained Windows x64 single EXE.
+Current version: **v0.1.4**, available as a self-contained Windows x64 single EXE.
 
-- [Download MineDock.exe directly](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.3/MineDock.exe)
-- [Windows x64 portable ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.3/MineDock-0.1.3-win-x64.zip)
-- [Complete source ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.3/MineDock-0.1.3-source.zip)
-- [Release notes and checksums](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.3)
+- [Download MineDock.exe directly](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.4/MineDock.exe)
+- [Windows x64 portable ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.4/MineDock-0.1.4-win-x64.zip)
+- [Complete source ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.4/MineDock-0.1.4-source.zip)
+- [Release notes and checksums](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.4)
 - [All releases](https://github.com/EnchantGapple233/Minedock/releases)
 
 Run `MineDock.exe` directly, or extract the portable ZIP and run the same file. The .NET runtime is included. The application targets Windows 10 / 11 x64; it has only been tested on Windows 11 x64 so far.
 
-### New in 0.1.3
+### New in 0.1.4
 
-- Open an associated PCL / HMCL, or install a bundled launcher offline and associate its game directory automatically.
-- Raise sidebar options and result rows with shadows on hover, change their selected colors, and return them smoothly to rest when the pointer leaves.
-- Cache each Modrinth section independently, restoring filters, page, selection, and scroll position. Lists persist for 24 hours across restarts.
+- Install Forge, NeoForge, Fabric, Quilt, OptiFine, Legacy Fabric, and LiteLoader, with complete compatible release lists and previews.
+- Filter Minecraft releases, snapshots, and historical Alpha / Beta versions, with protection against stale selection responses.
+- Check GitHub Releases automatically, verify and replace the EXE, restart when idle, and recover failures. Include manual checking and an opt-out.
+- Theme the update menu, distinguish game-list failures from empty filters, and reload on source changes. Refresh the interface from the title bar while preserving filters, pagination, and installation choices.
+- Preload common resource lists, tags, and icons in the background after the initial view appears.
 
 See the [changelog](CHANGELOG.md) for the complete list.
 
 ## Features
 
-- Install official Minecraft Java releases, including the client, libraries, native library archives, assets, and logging configuration.
-- Install stable Fabric Loader versions and the matching Fabric API.
+- Install Minecraft Java releases, snapshots, and historical versions, including the client, libraries, native library archives, assets, and logging configuration.
+- Install compatible versions of seven loader families, including previews, with optional matching Fabric API installation.
 - Search Modrinth for mods, modpacks, shaders, and resource packs, with game version, loader, and category filters appropriate to each section.
 - Resolve required mod dependencies and show their names, versions, and files before installation.
 - Install mods and resource packs; generate Fabric shader installation plans that include Iris and its declared dependencies.
@@ -46,12 +48,12 @@ See the [changelog](CHANGELOG.md) for the complete list.
 - Install bundled, unmodified official PCL 2.99.0.0 and HMCL 3.16.4 executables offline and associate them automatically. A self-contained single EXE is available.
 - View component licenses and export the included HMCL / HMCLauncher corresponding source without an Internet connection.
 
-![MineDock interface, v0.1.3](docs/images/v0.1.3-main.png)
+![MineDock interface, v0.1.4](docs/images/v0.1.4-main.png)
 
 ## Usage
 
 1. Associate an existing PCL.exe, HMCL.exe, or HMCL.jar, or use the bottom-left download icon to install and associate a bundled launcher. MineDock uses its configured game directory first, then looks for a neighboring `.minecraft` folder. Select a folder manually if none is found.
-2. Choose a Minecraft and Fabric version to install, or an existing game instance when adding content.
+2. Choose Minecraft, a loader, and its version, or an existing game instance when adding content.
 3. Search and filter content, create an installation plan, and review files, dependencies, download sizes, and destinations before confirming.
 4. Use the bottom-left launch button to open PCL / HMCL, then use the launcher for account login, game launching, isolation settings, and management of existing mods.
 
@@ -71,9 +73,25 @@ Offline installation means writing the embedded EXE to the selected directory. H
 
 ### Single EXE
 
-Version 0.1.3 needs only `MineDock.exe`; installing .NET separately is unnecessary. On first launch, .NET extracts runtime and native components into its temporary cache. Settings and downloads retain their application-data locations. Installed launchers and `.minecraft` remain in the chosen directory.
+Since v0.1.3, the release distribution needs only `MineDock.exe`; installing .NET separately is unnecessary. On first launch, .NET extracts runtime and native components into its temporary cache. Settings and downloads retain their application-data locations. Installed launchers and `.minecraft` remain in the chosen directory.
 
 The shield icon opens license notices and the offline HMCL source export. A single-file distribution still creates runtime caches and requested installation files.
+
+### Loaders and Versions
+
+Choose Forge, NeoForge, Fabric, Quilt, OptiFine, Legacy Fabric, or LiteLoader. The version list retains compatible releases and previews returned upstream and defaults to the newest stable release. Supported game versions depend on each project; unavailable combinations cannot be installed.
+
+Fabric, Quilt, and Legacy Fabric use their Meta profiles. The remaining loaders use the bundled, unmodified HMCL 3.16.4 engine in a separate staging directory before transactional installation. The engine requires JDK 21+ and OpenJFX, or a higher Java version required by the game. The plan includes a suitable Temurin JDK if none is found. Installer and processing dependencies may be downloaded during execution and are additional to the initial plan size. Logs are under `%LOCALAPPDATA%\MineDock\loader-logs`.
+
+Fabric API remains optional. Install QSL / QFAPI through the mods section for an installed instance. Combining multiple primary loaders is outside this release.
+
+LiteLoader snapshots resolve actual builds from official Maven metadata and verify SHA-1, avoiding an unavailable mirror node. Historical ASM libraries use Maven Central.
+
+### Automatic Updates
+
+Use the title-bar update icon to check manually or disable automatic updates. The preference persists. By default MineDock checks the latest stable GitHub Release from `EnchantGapple233/Minedock` on startup and every hour, excludes previews, and never downgrades. The single EXE must pass size and GitHub SHA-256 checks, with `SHA256SUMS.txt` as a legacy fallback.
+
+After downloading, the status remains visible for 10 seconds. Replacement and restart wait for active tasks, pending installation plans, and child windows. A separate helper retains the original EXE and waits for the new window to become ready, restoring the previous program on failure. Network errors, rate limits, missing write access, and invalid hashes preserve the running version. Update data and results are under `%LOCALAPPDATA%\MineDock\updates`. Automatic replacement requires the release single EXE; development builds only check and download.
 
 ### Launcher Compatibility
 
@@ -97,27 +115,33 @@ Mods, modpacks, shaders, and resource packs cache their successful lists separat
 
 Lists are also saved to `%LOCALAPPDATA%\MineDock\catalog-cache` for 24 hours, including across restarts. A new window fetches file versions when a project is first selected. Use the section's refresh button or submit a new search to request current results. Refresh retains the current page; a new search starts at page one. Changing the target game or loader reapplies its filters. Corrupt, expired, or unwritable caches do not prevent normal searches.
 
+After the first view appears, MineDock preloads tags, the first page of each resource section, and up to six icons per section. Fresh caches and in-flight requests are reused. Warmup leaves the current view and filters untouched, pauses subsequent requests during installation or plan preparation, and cancels on close. Failed requests remain retryable. It prepares browsing data without downloading game payloads, mod files, or Java.
+
 ## Download Sources
 
 | Content | Source |
 | --- | --- |
 | Minecraft client, libraries, and assets | Mojang official servers / BMCLAPI |
 | Fabric | Official Fabric metadata and Maven |
+| Quilt / Legacy Fabric | Their official Meta and Maven services |
+| Forge / NeoForge | BMCLAPI indexes; HMCL downloads installers and dependencies according to the source setting |
+| OptiFine / LiteLoader | BMCLAPI and HMCL-compatible distribution services |
 | Mods, modpacks, shaders, and resource packs | Modrinth |
 | Java | Official Eclipse Adoptium Temurin distribution |
+| MineDock updates | This repository's GitHub Releases |
 
 The game source can be automatic, official, or BMCLAPI. Automatic mode tries BMCLAPI first for supported Mojang domains and falls back to official servers on failure. A locked source does not switch automatically. Other services retain their own official distribution sources.
 
 ## Current Scope
 
-This is the first phase of the project. Full installers for Forge, NeoForge, Quilt, QSL, Legacy Fabric, and OptiFine, automatic `.mrpack` installation, and game-directory ZIP import / extraction are **not implemented yet**. The modpack section currently supports search, filtering, and downloading original files.
+Automatic `.mrpack` installation and game-directory ZIP import / extraction are **not implemented yet**. The modpack section supports search, filtering, and downloading original files. Loader support covers the seven families above; it does not guarantee every historical artifact remains available upstream or arbitrary loader combinations are compatible.
 
 Account login, the actual game process, mod enabling / disabling, and uninstalling remain the launcher's responsibility. MineDock provides a way to open the launcher. Compatibility checks use game versions, loaders, declared dependencies, and known conflicts; they cannot rule out every runtime conflict.
 
 ## Data and Verification
 
 - Settings, history, caches, installation plans, and transaction journals are stored in `%LOCALAPPDATA%\MineDock`.
-- Files are committed to the target directory only after download and upstream hash verification.
+- Remote files in MineDock's plan pass upstream hashes before commit. HMCL validates loader dependencies under its own engine rules; generated files receive local SHA-256 checks before commit to detect staging changes. Local checks are not upstream signatures.
 - Existing files are backed up before replacement. Failed or cancelled operations can roll back; interrupted transactions can recover while protecting files changed by other programs.
 - Minecraft, mods, modpacks, and Java are downloaded from their upstream providers when requested. The bundled PCL / HMCL programs are independent, unmodified launchers with their own licenses.
 
@@ -136,6 +160,8 @@ dotnet publish .\MineDock.App\MineDock.App.csproj -c Release -p:PublishProfile=S
 Append `--live` to the check command to exercise upstream APIs. `--live --install` downloads approximately 1 GB and installs Minecraft 1.21.1, Fabric, Fabric API, and Java 21 into the specified test directory. `--live --mirror` checks BMCLAPI separately.
 
 `MineDock.UiChecks` runs actual WPF pagination, text bounds, hover and selection feedback, list caching, and launcher association / installation checks with isolated application data. Append `--live` to verify real pagination across all four Modrinth sections and access to the final page, and to capture light / dark and minimum-window screenshots.
+
+`dotnet run --project .\MineDock.UiChecks -c Release -- .\check-output-loaders --loader-install` installs representative versions of all seven loaders plus legacy Forge and NeoForge for Minecraft 1.20.1. It uses real clients and libraries while omitting shared game assets. The engine discovers a JDK 21+ or downloads one.
 
 Diagnostic screenshots: `MineDock.exe --capture <absolute-output-directory>`. Set `MINEDOCK_DATA` to keep diagnostic data separate from your normal settings.
 

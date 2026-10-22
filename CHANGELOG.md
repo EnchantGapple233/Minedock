@@ -1,5 +1,41 @@
 # Changelog / 更新日志
 
+## [0.1.4] - 2026-10-22
+
+### 中文
+
+- 修复游戏安装页只提供 Fabric 的限制，加入 Forge、NeoForge、Quilt、OptiFine、Legacy Fabric 与 LiteLoader。
+- 按 Minecraft 版本联网获取兼容加载器，展示全部返回版本及预发布标识，默认选择最新稳定版；区分无兼容版本与请求失败。
+- Minecraft 列表加入快照及历史 Alpha / Beta，可按版本类型筛选；保留正式版默认视图。
+- 切换游戏或加载器立即清空旧选择并取消旧请求，迟到响应不能覆盖当前列表，加载中或没有兼容版本时禁止创建安装计划。
+- Fabric、Quilt、Legacy Fabric 使用对应 Meta 启动配置；Forge、NeoForge、OptiFine、LiteLoader 使用随附、未经修改的 HMCL 引擎完成安装处理及支持库补齐。
+- 修复历史加载器的原生库分类及失效 ASM 地址；LiteLoader 快照从官方 Maven 元数据解析实际构建，下载前获取上游校验值。
+- 加载器在独立临时目录处理，生成文件经 SHA-256 校验后纳入现有事务；取消或失败回滚，并保存安装日志。复用满足要求的本机 JDK，缺少时在计划中加入 Temurin JDK 21 或游戏要求的更高版本。
+- 从本仓库正式 GitHub Releases 自动检查新版本，核对单 EXE 大小与 SHA-256，空闲后自动替换并重启；忙碌、待确认计划及子窗口打开期间延后。
+- 更新使用独立助手、原程序备份和新窗口就绪确认；替换或启动失败恢复原版本，保护被其他程序修改的文件。支持手动检查及关闭自动更新。
+- 修复自动更新菜单的主题配色，确保明暗主题下状态文字、操作项和勾选标记可读；打开更新菜单时延后程序替换。
+- 区分游戏版本加载中、联网失败和筛选为空；切换来源自动重载，取消旧来源请求，刷新失败保留已有列表，筛选为空时可恢复全部版本。
+- 增加标题栏界面刷新按钮，重新扫描本地版本并刷新当前栏目；保留资源筛选和页码、游戏与加载器选择及自定义名称，忙碌时禁用重复刷新。
+- 首屏显示后先在后台预加载资源分类及四个 Modrinth 栏目的第一页，再加载每栏最多 6 个图标，避免慢图标拖延其他列表；复用有效缓存和进行中的请求，首次切换直接读取，不改变当前页面或下载游戏大文件。
+- 增加完整版本列表、预发布、异步切换、安装、更新校验和恢复检查。
+
+### English
+
+- Remove the Fabric-only restriction and add Forge, NeoForge, Quilt, OptiFine, Legacy Fabric, and LiteLoader.
+- Fetch compatible loader versions, retain previews, and default to the latest stable release. Distinguish unavailable versions from request failures.
+- Include Minecraft snapshots and historical Alpha / Beta versions, with type filters and the release-only default.
+- Clear old selections and cancel requests when switching games or loaders. Reject late responses and disable installation while loading or without a compatible version.
+- Use Meta profiles for Fabric, Quilt, and Legacy Fabric, and the bundled, unmodified HMCL engine for Forge, NeoForge, OptiFine, and LiteLoader processing and libraries.
+- Fix historical native-library classifiers and obsolete ASM addresses. Resolve LiteLoader snapshots from official Maven metadata and obtain upstream checksums.
+- Process loaders in a separate directory, verify generated files with SHA-256, and commit through the existing transaction. Roll back cancellation or failure and retain logs. Reuse a suitable local JDK or include Temurin JDK 21 or a higher game requirement in the plan.
+- Check stable GitHub Releases from this repository, verify the single EXE's size and SHA-256, and replace and restart when idle. Defer while tasks, pending plans, or child windows are active.
+- Use a separate update helper, a backup, and a new-window readiness check. Restore the previous program on failure, preserve externally modified files, and offer manual checking and an automatic-update switch.
+- Theme the update menu so status text, actions, and check marks remain readable in light and dark modes. Defer executable replacement while the menu is open.
+- Distinguish game-list loading, fetch failures, and empty filters. Reload on source changes, cancel obsolete requests, preserve existing lists on refresh failure, and offer to clear empty-result filters.
+- Add a title-bar interface refresh action to rescan local versions and refresh the current section. Preserve resource filters and pagination, game and loader choices, and custom names; block duplicate refreshes while busy.
+- After the first view appears, preload resource tags and each Modrinth section's first page before fetching up to six icons per section, so slow icons do not delay other lists. Reuse fresh caches and pending requests without changing the current view or downloading game payloads.
+- Add version-list, preview, asynchronous-selection, installation, update-verification, and recovery checks.
+
 ## [0.1.3] - 2026-10-21
 
 ### 中文
@@ -102,3 +138,4 @@
 [0.1.1]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.1
 [0.1.2]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.2
 [0.1.3]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.3
+[0.1.4]: https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.4

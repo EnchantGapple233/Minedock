@@ -51,6 +51,15 @@ public partial class MainWindow
 
     private async Task<bool> RestoreCatalog(PageKind page, int navigation)
     {
+        var context = CatalogContext;
+        if (!_catalogViews.ContainsKey(page) && _catalogPreloads.TryGetValue((page, context), out var pending))
+        {
+            var search = _search;
+            await pending;
+            if (navigation != _navigation || context != CatalogContext || _activeCatalogSearch is not null ||
+                !ReferenceEquals(search, _search))
+                return true;
+        }
         if (!_catalogViews.TryGetValue(page, out var view))
         {
             var snapshot = ReadCatalog(page);

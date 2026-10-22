@@ -24,7 +24,8 @@ public record GameRow(GameRelease Release, bool Installed)
 {
     public string Id => Release.Id;
     public string Date => Release.ReleaseDate.ToString("yyyy.MM.dd");
-    public string Status => Installed ? "已安装" : "正式版";
+    public string Status => Installed ? "已安装" : Release.Type switch
+    { "release" => "正式版", "snapshot" => "快照", "old_alpha" => "Alpha", "old_beta" => "Beta", _ => Release.Type };
 }
 public class ProjectRow(SearchProject project) : Observable
 {
@@ -42,7 +43,11 @@ public class ProjectRow(SearchProject project) : Observable
 public class MainViewModel : Observable
 {
     public Settings Settings { get; }
-    public MainViewModel(Settings settings) => Settings = settings;
+    public MainViewModel(Settings settings)
+    {
+        Settings = settings;
+        Games.CollectionChanged += (_, _) => RefreshGameListState();
+    }
     private ImageSource? _backgroundImage;
     public ImageSource? BackgroundImage
     {
@@ -50,6 +55,9 @@ public class MainViewModel : Observable
         set { if (Set(ref _backgroundImage, value)) Changed(nameof(HasBackground)); }
     }
     public bool HasBackground => BackgroundImage is not null;
+    private string _updateStatus = "MineDock " + UpdateService.CurrentVersion;
+    public string UpdateStatus { get => _updateStatus; set => Set(ref _updateStatus, value); }
+    public bool AutomaticUpdates { get => Settings.AutomaticUpdates; set { Settings.AutomaticUpdates = value; Changed(); } }
     public string BackgroundName => HasBackground ? Settings.BackgroundImageName : "未设置背景";
     public double BackgroundIntensity
     {
@@ -91,7 +99,10 @@ public class MainViewModel : Observable
     public ObservableCollection<Choice> TaskTargets { get; } = [new("", "全部目标")];
     public Choice[] SourceChoices { get; } = [new("Auto", "自动 · BMCLAPI → 官方"), new("Official", "官方来源"), new("Bmclapi", "BMCLAPI")];
     public Choice[] SortChoices { get; } = [new("relevance", "相关度"), new("downloads", "下载最多"), new("updated", "最近更新"), new("newest", "最新发布"), new("follows", "关注最多")];
-    public Choice[] GameLoaderChoices { get; } = [new("vanilla", "原版"), new("fabric", "Fabric")];
+    public Choice[] GameLoaderChoices { get; } = [new("vanilla", "原版"),
+        .. LoaderService.Kinds.Select(kind => new Choice(kind, LoaderService.Name(kind)))];
+    public Choice[] GameTypeChoices { get; } = [new("", "全部版本"), new("release", "正式版"),
+        new("snapshot", "快照 / 预发布"), new("old_alpha", "历史 Alpha"), new("old_beta", "历史 Beta")];
     public Choice[] InstalledChoices { get; } = [new("", "全部状态"), new("yes", "已安装"), new("no", "未安装")];
     public Choice[] JavaTypes { get; } = [new("jre", "JRE · 运行版"), new("jdk", "JDK · 开发版")];
     public Choice[] TaskFilters { get; } = [new("", "全部状态"), new("进行中", "进行中"), new("已完成", "已完成"), new("失败", "失败"), new("已取消", "已取消")];
@@ -104,6 +115,46 @@ public class MainViewModel : Observable
     public bool IsJava => Page == PageKind.Java;
     public bool IsTasks => Page == PageKind.Tasks;
     public bool IsFabric => GameLoader == "fabric";
+    public bool HasLoader => GameLoader != "vanilla";
+    public string LoaderLabel => LoaderService.Name(GameLoader);
+    private bool _gameListLoading, _gameListLoaded, _refreshing;
+    private string _gameListError = "";
+    public bool GameListLoading
+    {
+        get => _gameListLoading;
+        set { if (Set(ref _gameListLoading, value)) { RefreshGameListState(); RefreshActions(); } }
+    }
+    public bool GameListLoaded
+    {
+        get => _gameListLoaded;
+        set { if (Set(ref _gameListLoaded, value)) RefreshGameListState(); }
+    }
+    public string GameListError
+    {
+        get => _gameListError;
+        set { if (Set(ref _gameListError, value)) RefreshGameListState(); }
+    }
+    public string GameListMessage => GameListLoading ? "正在获取游戏版本…"
+        : GameListError.Length > 0 ? "暂时无法获取游戏版本"
+        : !GameListLoaded ? "尚未获取游戏版本" : "当前筛选没有匹配的游戏版本";
+    public bool CanClearGameFilters => GameListLoaded && !GameListLoading && GameListError.Length == 0 && Games.Count == 0;
+    private void RefreshGameListState()
+    {
+        Changed(nameof(GameListMessage)); Changed(nameof(CanClearGameFilters));
+    }
+    public bool Refreshing
+    {
+        get => _refreshing;
+        set { if (Set(ref _refreshing, value)) RefreshActions(); }
+    }
+    public bool CanRefresh => CanPrepare && !Refreshing && !Loading && !GameListLoading && !LoaderLoading;
+    private string _gameType = "release", _loaderStatus = "";
+    private bool _loaderLoading;
+    public string GameType { get => _gameType; set => Set(ref _gameType, value ?? ""); }
+    public string LoaderStatus { get => _loaderStatus; set => Set(ref _loaderStatus, value); }
+    public bool LoaderLoading { get => _loaderLoading; set { if (Set(ref _loaderLoading, value)) { Changed(nameof(CanPrepareGame)); Changed(nameof(CanRefresh)); } } }
+    public bool CanPrepareGame => CanPrepare && !GameListLoading && !Refreshing && !LoaderLoading &&
+        SelectedGame is not null && (!HasLoader || SelectedLoader is not null);
     public bool IsModpack => Page == PageKind.Modpack;
     public bool CanInstallCatalog => IsCatalog && !IsModpack;
     public bool IsShader => Page == PageKind.Shader;
@@ -132,12 +183,12 @@ public class MainViewModel : Observable
     public bool Loading
     {
         get => _loading;
-        set { if (Set(ref _loading, value)) RefreshPagination(); }
+        set { if (Set(ref _loading, value)) { RefreshPagination(); Changed(nameof(CanRefresh)); } }
     }
     public bool Preparing { get => _preparing; set { if (Set(ref _preparing, value)) RefreshActions(); } }
     public bool Running { get => _running; set { if (Set(ref _running, value)) RefreshActions(); } }
     public bool CanPrepare => !Preparing && !Running && !LauncherStarting;
-    private void RefreshActions() { Changed(nameof(CanPrepare)); Changed(nameof(CanLaunchLauncher)); }
+    private void RefreshActions() { Changed(nameof(CanPrepare)); Changed(nameof(CanLaunchLauncher)); Changed(nameof(CanPrepareGame)); Changed(nameof(CanRefresh)); }
     public bool ShowPlan { get => _showPlan; set => Set(ref _showPlan, value); }
     public int CurrentPage { get; private set; }
     public int TotalProjects { get; private set; }
@@ -177,17 +228,18 @@ public class MainViewModel : Observable
     public string Error { get => _error; set { if (Set(ref _error, value)) Changed(nameof(HasError)); } }
     public bool HasError => Error.Length > 0;
     public string Query { get => _query; set => Set(ref _query, value); }
-    public string GameLoader { get => _gameLoader; set { if (Set(ref _gameLoader, value)) Changed(nameof(IsFabric)); } }
+    public string GameLoader { get => _gameLoader; set { if (Set(ref _gameLoader, value)) {
+        Changed(nameof(IsFabric)); Changed(nameof(HasLoader)); Changed(nameof(LoaderLabel)); Changed(nameof(CanPrepareGame)); } } }
     public string InstalledFilter { get => _installed; set => Set(ref _installed, value); }
     public string NewId { get => _newId; set => Set(ref _newId, value); }
     public string JavaRequirement { get => _javaRequirement; set => Set(ref _javaRequirement, value); }
     private GameRow? _selectedGame;
-    public GameRow? SelectedGame { get => _selectedGame; set => Set(ref _selectedGame, value); }
+    public GameRow? SelectedGame { get => _selectedGame; set { if (Set(ref _selectedGame, value)) Changed(nameof(CanPrepareGame)); } }
     private Instance? _target;
     public Instance? Target { get => _target; set { if (Set(ref _target, value)) Changed(nameof(TargetDirectory)); } }
     public string TargetDirectory => Target?.DirectoryError ?? Target?.GameDirectory ?? "未选择目标版本";
     private LoaderRelease? _selectedLoader;
-    public LoaderRelease? SelectedLoader { get => _selectedLoader; set => Set(ref _selectedLoader, value); }
+    public LoaderRelease? SelectedLoader { get => _selectedLoader; set { if (Set(ref _selectedLoader, value)) Changed(nameof(CanPrepareGame)); } }
     private ProjectRow? _selectedProject;
     public ProjectRow? SelectedProject { get => _selectedProject; set => Set(ref _selectedProject, value); }
     private ProjectVersion? _selectedVersion;

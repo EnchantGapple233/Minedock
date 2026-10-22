@@ -26,7 +26,15 @@ MineDock embeds the unmodified official HMCL 3.16.4 Windows EXE, including its H
 
 The original GPL texts and upstream READMEs containing these additional terms are embedded and viewable in the app. The full corresponding HMCL and HMCLauncher source archives, build scripts, and provenance are included in the embedded `HMCL-3.16.4-corresponding-source.zip`, exportable from the license and source window without an Internet connection. The same source resource is included in MineDock's source distribution.
 
+Since v0.1.4, MineDock also extracts the original HMCL JAR from the unmodified EXE and calls HMCLCore through `MineDockBridge.java` to install Forge, NeoForge, OptiFine, and LiteLoader. The bridge is identified as MineDock code under GPL-3.0-or-later; HMCL's engine, notices, and source remain unchanged. The extracted JAR SHA-256 is `98f0123f38e86a606aa583f74d21ae74128679e921ea7ec0c43ab26303767e9e`.
+
 Sources: https://github.com/HMCL-dev/HMCL — https://github.com/HMCL-dev/HMCLauncher
+
+## OpenJFX
+
+The loader installation engine downloads the Windows JavaFX Base and Graphics 21.0.8 artifacts from Maven Central and verifies their upstream SHA-1 values. OpenJFX is licensed under GPLv2 with the Classpath Exception. These JARs are downloaded when needed rather than bundled in the MineDock EXE.
+
+Source: https://github.com/openjdk/jfx
 
 ## SkiaSharp / Skia
 

@@ -64,6 +64,7 @@ var hmclFlag = Array.IndexOf(args, "--hmcl-exe");
 LauncherChecks.Run(Path.Combine(testRoot, "launchers"), Check, Reject,
     hmclFlag >= 0 && hmclFlag + 1 < args.Length ? Path.GetFullPath(args[hmclFlag + 1]) : null);
 using var network = new Network { Source = SourceMode.Auto };
+await VersionFeatureChecks.Run(Path.Combine(testRoot, "v014"), Check);
 Check(network.Candidates("https://resources.download.minecraft.net/aa/hash").Count() == 2, "automatic source has official fallback");
 network.Source = SourceMode.Bmclapi;
 Check(network.Candidates("https://libraries.minecraft.net/a.jar").Single().Contains("bmclapi2"), "locked mirror never silently changes source");

@@ -1,0 +1,11 @@
+{
+  "Passed": 3,
+  "Checks": [
+    "Real Forge list is complete in the WPF dropdown and defaults to a stable release",
+    "Live Forge controls render with no application error: Dark 1340px",
+    "Live Forge controls render with no application error: Light 1080px"
+  ],
+  "Live": false,
+  "DpiScale": 1.5,
+  "ExitCode": 0
+}

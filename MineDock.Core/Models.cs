@@ -6,7 +6,7 @@ namespace MineDock.Core;
 
 public enum SourceMode { Auto, Official, Bmclapi }
 public enum PageKind { Game, Modpack, Mod, Shader, Resourcepack, Java, Tasks }
-public enum FileAction { Download, Text, ExtractJava }
+public enum FileAction { Download, Text, ExtractJava, Local }
 public enum LauncherKind { Pcl, Hmcl }
 
 public sealed class Settings
@@ -21,6 +21,7 @@ public sealed class Settings
     public string SelectedInstance { get; set; } = "";
     public SourceMode Source { get; set; }
     public string Theme { get; set; } = "System";
+    public bool AutomaticUpdates { get; set; } = true;
     public string BackgroundImageFile { get; set; } = "";
     public string BackgroundImageName { get; set; } = "";
     public double BackgroundIntensity { get; set; } = 0.55;
@@ -82,9 +83,10 @@ public static class JsonTools
     }
 }
 
-public record GameRelease(string Id, string Url, DateTime ReleaseDate);
+public record GameRelease(string Id, string Url, DateTime ReleaseDate, string Type = "release");
 public record LoaderRelease(string Version, bool Stable)
 {
+    public string Display => Version + (Stable ? "" : " · 预发布");
     public override string ToString() => Version;
 }
 public record Instance(string Id, string GameVersion, string Loader, string GameDirectory, bool Isolated, string? DirectoryError)
@@ -127,6 +129,8 @@ public sealed class InstallPlan
     public string Destination { get; set; } = "";
     public string TargetId { get; set; } = "";
     public string Type { get; set; } = "安装";
+    public LoaderInstall? Loader { get; set; }
+    public SourceMode Source { get; set; }
     public List<PlannedFile> Files { get; set; } = [];
     public List<string> Details { get; set; } = [];
     public long Bytes => Files.Sum(f => f.Size);
@@ -138,6 +142,12 @@ public sealed class InstallPlan
         else if (existing.Hash != file.Hash || existing.Text != file.Text)
             throw new InvalidOperationException($"安装计划包含重复且不同的文件：{file.Destination}");
     }
+}
+public sealed record LoaderInstall(string Root, string Game, string Kind, string Version, string TargetId)
+{
+    public string JavaExecutable { get; set; } = "";
+    public string EngineDirectory { get; set; } = "";
+    public int MinimumJava { get; set; } = 21;
 }
 public record TransferProgress(string Phase, string Message, int Done, int Total, long Bytes, long TotalBytes);
 public record HistoryEntry(string Id, string Title, string Target, string Type, string Status, DateTime Time, string Message, string TargetId = "");

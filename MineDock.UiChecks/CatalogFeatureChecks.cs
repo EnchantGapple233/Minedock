@@ -58,9 +58,14 @@ internal static class CatalogFeatureChecks
             await Navigate(window, kind);
         check(handler.Searches == searches, "All four resource sections reuse their cached lists on repeated visits");
         Click(window, "RefreshPageButton");
-        await Until(() => !window.Vm.Loading && handler.Searches == searches + 1);
+        await Until(() => !window.Vm.Loading && !window.Vm.Refreshing && handler.Searches == searches + 1);
         check(handler.LastOffset == 30 && window.Vm.CurrentPage == 2,
             "Explicit refresh fetches new content while retaining the current page");
+        Click(window, "RefreshInterfaceButton");
+        await Until(() => !window.Vm.Loading && !window.Vm.Refreshing && handler.Searches == searches + 2);
+        check(handler.LastOffset == 30 && window.Vm.CurrentPage == 2 && window.Vm.Query == "kept" &&
+            window.Vm.Sort == "downloads",
+            "Title-bar interface refresh preserves resource filters and pagination while reloading data");
         window.Vm.Query = "new-query";
         await Search(window);
         check(window.Vm.CurrentPage == 1 && window.Vm.Projects[0].Title.Contains("new-query"),
@@ -177,6 +182,99 @@ internal static class CatalogFeatureChecks
         check(rapid.Vm.ProjectVersions.All(v => v.ProjectId.StartsWith("resourcepack-")) &&
             rapidHandler.Versions == rapidVersionRequests,
             "Completed background version requests are reused when returning to their section");
+        await CheckPreload(create, folder, check);
+    }
+
+    private static async Task CheckPreload(Func<MainWindow> create, string folder, Action<bool, string> check)
+    {
+        var previous = Environment.GetEnvironmentVariable("MINEDOCK_DATA");
+        try
+        {
+            Environment.SetEnvironmentVariable("MINEDOCK_DATA", Path.Combine(folder, "preload-state"));
+            new Settings().Save();
+            Task Preload(MainWindow window) => (Task)typeof(MainWindow).GetMethod("PreloadStartup", Private)!.Invoke(window, null)!;
+            var window = create();
+            var handler = Attach(window);
+            await Navigate(window, PageKind.Tasks);
+            var status = window.Vm.Status;
+            window.Vm.Preparing = true;
+            var pending = Preload(window);
+            check(ReferenceEquals(pending, Preload(window)), "Repeated startup warmup shares one background operation");
+            await Task.Delay(750);
+            check(handler.Tags == 0 && handler.Searches == 0 && !pending.IsCompleted,
+                "Startup warmup waits for active plan preparation before making network requests");
+            window.Vm.Preparing = false;
+            await pending;
+            check(window.Vm.Page == PageKind.Tasks && window.Vm.Status == status && !window.Vm.Loading &&
+                window.Vm.Projects.Count == 0 && window.Vm.Error == "",
+                "Startup preloading leaves the current view, selection, status, and busy state untouched");
+            check(handler.Searches == 4 && handler.Tags == 2 && handler.Versions == 0,
+                "Warmup is bounded to shared tags and four first pages without project files or versions");
+            foreach (var page in new[] { PageKind.Mod, PageKind.Modpack, PageKind.Shader, PageKind.Resourcepack })
+                await Navigate(window, page);
+            check(handler.Searches == 4 && handler.Tags == 2,
+                "First visits consume preloaded lists without duplicate search or tag requests");
+            window.Vm.Query = "preload-preserve";
+            await Search(window, 2);
+            await Search(window, 2);
+            var saved = File.ReadAllText(Path.Combine(Settings.DataDirectory, "catalog-cache", "resourcepack.json"));
+            var reopened = create();
+            var reused = Attach(reopened);
+            await Navigate(reopened, PageKind.Tasks);
+            await Preload(reopened);
+            check(reused.Searches == 0 && saved == File.ReadAllText(Path.Combine(Settings.DataDirectory, "catalog-cache", "resourcepack.json")),
+                "Startup warmup reuses fresh disk lists and preserves saved queries and pages");
+
+            Environment.SetEnvironmentVariable("MINEDOCK_DATA", Path.Combine(folder, "preload-race-state"));
+            new Settings().Save();
+            var racing = create();
+            var delayed = Attach(racing);
+            var searchGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            delayed.NextSearchGate = searchGate.Task;
+            await Navigate(racing, PageKind.Tasks);
+            pending = Preload(racing);
+            await Until(() => delayed.Searches == 1);
+            var navigation = Navigate(racing, PageKind.Mod);
+            searchGate.SetResult();
+            await navigation;
+            check(delayed.SearchCounts.GetValueOrDefault("mod") == 1 && racing.Vm.Projects.Count == 30 &&
+                racing.Vm.Projects.All(p => p.Project.ProjectType == "mod"),
+                "Navigation during warmup awaits the same in-flight list request");
+            await pending;
+            var target = new Instance("preload-changed", "1.20.1", "quilt", folder, true, null);
+            racing.Vm.Instances.Add(target);
+            racing.Vm.Target = target;
+            await Navigate(racing, PageKind.Modpack);
+            check(delayed.LastFacets.Contains("versions:1.20.1") && delayed.LastFacets.Contains("categories:quilt"),
+                "Changed game targets reject startup lists from the previous context");
+
+            Environment.SetEnvironmentVariable("MINEDOCK_DATA", Path.Combine(folder, "preload-failure-state"));
+            new Settings().Save();
+            var offline = create();
+            var failed = Attach(offline);
+            failed.FailSearch = true;
+            await Navigate(offline, PageKind.Tasks);
+            await Preload(offline);
+            check(offline.Vm.Error == "" && offline.Vm.Page == PageKind.Tasks,
+                "Background preload failures do not surface a modal or disturb the active page");
+            failed.FailSearch = false;
+            await Navigate(offline, PageKind.Mod);
+            check(offline.Vm.Projects.Count == 30, "A failed preload remains retryable through normal navigation");
+
+            Environment.SetEnvironmentVariable("MINEDOCK_DATA", Path.Combine(folder, "preload-cancel-state"));
+            new Settings().Save();
+            var cancelled = create();
+            var cancelling = Attach(cancelled);
+            cancelling.DelaySearch = 1000;
+            await Navigate(cancelled, PageKind.Tasks);
+            pending = Preload(cancelled);
+            await Until(() => cancelling.Searches == 1);
+            cancelled.Close();
+            await pending;
+            check(cancelling.Searches == 1 && !File.Exists(Path.Combine(Settings.DataDirectory, "catalog-cache", "mod.json")),
+                "Closing the window cancels startup work and prevents stale cache writes");
+        }
+        finally { Environment.SetEnvironmentVariable("MINEDOCK_DATA", previous); }
     }
 
     private static FixtureHandler Attach(MainWindow window)
@@ -220,6 +318,8 @@ internal static class CatalogFeatureChecks
     private sealed class FixtureHandler : HttpMessageHandler
     {
         internal int Searches, Tags, Versions, LastOffset, DelaySearch, DelayTags, DelayVersions;
+        internal readonly Dictionary<string, int> SearchCounts = [];
+        internal Task? NextSearchGate;
         internal string LastFacets = "";
         internal bool FailSearch;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
@@ -233,8 +333,12 @@ internal static class CatalogFeatureChecks
                 LastOffset = int.Parse(query["offset"]!);
                 LastFacets = query["facets"]!;
                 var kind = JsonSerializer.Deserialize<string[][]>(LastFacets)![0][0]["project_type:".Length..];
+                SearchCounts[kind] = SearchCounts.GetValueOrDefault(kind) + 1;
                 var text = query["query"] ?? "";
                 var total = text == "empty" ? 0 : 75;
+                var gate = NextSearchGate;
+                NextSearchGate = null;
+                if (gate is not null) await gate.WaitAsync(ct);
                 await Task.Delay(DelaySearch, ct);
                 if (FailSearch) throw new HttpRequestException("Offline catalog fixture.");
                 response = new { total_hits = total, hits = Enumerable.Range(LastOffset, Math.Min(30, total - LastOffset))

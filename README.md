@@ -8,28 +8,30 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 
 ## 下载
 
-当前版本：**v0.1.3**，提供自带运行环境的 Windows x64 单 EXE。
+当前版本：**v0.1.4**，提供自带运行环境的 Windows x64 单 EXE。
 
-- [直接下载 MineDock.exe](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.3/MineDock.exe)
-- [Windows x64 便携 ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.3/MineDock-0.1.3-win-x64.zip)
-- [完整源码 ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.3/MineDock-0.1.3-source.zip)
-- [版本说明与校验文件](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.3)
+- [直接下载 MineDock.exe](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.4/MineDock.exe)
+- [Windows x64 便携 ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.4/MineDock-0.1.4-win-x64.zip)
+- [完整源码 ZIP](https://github.com/EnchantGapple233/Minedock/releases/download/v0.1.4/MineDock-0.1.4-source.zip)
+- [版本说明与校验文件](https://github.com/EnchantGapple233/Minedock/releases/tag/v0.1.4)
 - [全部版本](https://github.com/EnchantGapple233/Minedock/releases)
 
 直接运行 `MineDock.exe`，或将便携 ZIP 解压后运行其中的同一文件，无需额外安装 .NET。程序面向 Windows 10 / 11 x64，目前只在 Windows 11 x64 实机验证。
 
-### 0.1.3 更新
+### 0.1.4 更新
 
-- 在 MineDock 中打开已关联的 PCL / HMCL，或离线安装内置启动器并自动关联游戏目录。
-- 侧栏与列表行悬停上浮、显示阴影，点击选中变色，移开后平滑落下。
-- 四类 Modrinth 资源分别缓存，切换栏目恢复筛选、页码、选择与滚动位置；列表可跨重启保留 24 小时。
+- 安装 Forge、NeoForge、Fabric、Quilt、OptiFine、Legacy Fabric、LiteLoader，联网列出当前游戏的全部兼容版本及预发布。
+- 提供 Minecraft 正式版、快照和历史 Alpha / Beta 类型筛选；切换版本时拒绝迟到的旧结果。
+- 从本仓库 GitHub Releases 自动检查、校验和替换程序，空闲时重启，失败恢复；可手动检查或关闭。
+- 更新菜单适配明暗主题；游戏页区分加载失败与筛选无结果，切换来源自动重载。标题栏可刷新界面，保留筛选、页码及安装选择。
+- 首屏出现后后台预加载常用资源列表、分类和图标，减少首次切换等待。
 
 完整变更见[更新日志](CHANGELOG.md)。
 
 ## 功能
 
-- 下载并安装 Minecraft 原版正式版，包含客户端、支持库、原生库包、资源文件和日志配置。
-- 安装 Fabric 稳定版，并按游戏版本补齐 Fabric API。
+- 下载并安装 Minecraft 原版正式版、快照及历史版本，包含客户端、支持库、原生库包、资源文件和日志配置。
+- 安装七类加载器的兼容版本，包括预发布；可按游戏版本补齐 Fabric API。
 - 从 Modrinth 搜索模组、整合包、光影和材质包，按游戏版本、加载器和当前栏目的内容分类等条件筛选。
 - 解析模组的必需依赖，在安装确认前展示待补齐的名称、版本和文件。
 - 安装模组和材质包；为 Fabric 光影生成包含 Iris 及声明依赖的安装计划。
@@ -46,12 +48,12 @@ Minecraft Java 版的 Windows 桌面下载与安装工具，使用 C#、.NET 10 
 - 内置 PCL 2.99.0.0 与 HMCL 3.16.4 官方原版 EXE，可离线安装并自动关联；支持自带运行时的单 EXE 分发。
 - 程序内可查看第三方许可，并离线导出 HMCL 与 HMCLauncher 的对应源码。
 
-![MineDock 界面，v0.1.3](docs/images/v0.1.3-main.png)
+![MineDock 界面，v0.1.4](docs/images/v0.1.4-main.png)
 
 ## 使用
 
 1. 点击「关联启动器」选择现有 PCL.exe、HMCL.exe 或 HMCL.jar；也可用左下角下载图标安装并关联内置启动器。程序优先读取已配置的游戏目录，否则识别启动器旁的 `.minecraft`；未找到时可手动选择。
-2. 安装游戏时选择 Minecraft 和 Fabric 版本；添加资源时选择已安装的游戏实例。
+2. 安装游戏时选择 Minecraft、加载器及具体版本；添加资源时选择已安装的游戏实例。
 3. 搜索并筛选内容，创建安装计划，检查文件、依赖、下载大小和目标位置后确认执行。
 4. 点击左下角「启动 PCL / HMCL」打开已关联启动器，再由启动器完成账号登录、游戏启动、隔离设置和已有模组管理。
 
@@ -71,9 +73,25 @@ Java 默认安装到 `%APPDATA%\.minecraft\runtime\MineDock`。安装后可在 P
 
 ### 单 EXE
 
-v0.1.3 只需一个 `MineDock.exe`，无需安装 .NET。首次运行时 .NET 会将运行时及原生组件展开到临时缓存，设置和下载数据仍保存在应用数据目录。安装出的启动器及 `.minecraft` 会保留在用户选择的位置。
+自 v0.1.3 起，发行版只需一个 `MineDock.exe`，无需安装 .NET。首次运行时 .NET 会将运行时及原生组件展开到临时缓存，设置和下载数据仍保存在应用数据目录。安装出的启动器及 `.minecraft` 会保留在用户选择的位置。
 
 顶部盾牌图标提供许可查看与 HMCL 对应源码导出。分发文件只有一个 EXE，不代表程序运行时不会创建缓存或安装文件。
+
+### 加载器与版本
+
+「主加载器」提供 Forge、NeoForge、Fabric、Quilt、OptiFine、Legacy Fabric、LiteLoader。版本列表可选择上游发布的兼容版本，包括预发布；默认优先最新稳定版。各加载器支持范围由上游决定，没有发布兼容版本时不能安装。
+
+Fabric、Quilt、Legacy Fabric 使用各自 Meta 接口；其余加载器由内置 HMCL 3.16.4 的安装引擎在临时目录执行，再提交配置与支持库。引擎需要 JDK 21+ 和 OpenJFX；游戏要求更高的 Java 时沿用其要求，缺少时在计划中加入对应 Temurin JDK。安装器、处理依赖可能在执行阶段继续联网下载，计划显示的初始大小不包含这部分。日志位于 `%LOCALAPPDATA%\MineDock\loader-logs`。
+
+Fabric API 保留可选补齐。QSL / QFAPI 等 API 可在模组页面按已安装实例筛选安装；本次不支持多个主加载器叠加。
+
+LiteLoader 快照按官方 Maven 元数据解析实际构建并核对 SHA-1，避免依赖已失效的镜像节点；旧 ASM 支持库使用 Maven Central。
+
+### 程序自动更新
+
+标题栏更新图标可手动检查或关闭「自动下载并更新」，设置跨重启保留。默认启动时及每小时检查 `EnchantGapple233/Minedock` 的最新正式 GitHub Release；不使用预发布，不降级。下载单 EXE 后核对大小及 GitHub SHA-256，旧发行版可回退使用 `SHA256SUMS.txt`。
+
+新版本下载完会显示状态并等待 10 秒，当前任务、安装计划和子窗口关闭后自动替换并重启。助手先保留原 EXE，等待新窗口就绪；替换或启动失败会保留或恢复原程序。无网络、限流、无写入权限或校验失败不会覆盖当前版本。更新数据与结果保存在 `%LOCALAPPDATA%\MineDock\updates`。自动替换适用于发行版单 EXE；开发构建只检查和下载。
 
 ### 启动器兼容
 
@@ -97,27 +115,33 @@ v0.1.3 只需一个 `MineDock.exe`，无需安装 .NET。首次运行时 .NET �
 
 列表还会保存到 `%LOCALAPPDATA%\MineDock\catalog-cache`，24 小时内重新打开程序可恢复上次列表；新窗口首次选中项目时会单独获取其文件版本。点击栏目右上角刷新，或执行新搜索，可获取新结果；刷新保留当前页，新搜索从第一页开始。更换目标游戏或加载器后重新按目标筛选。损坏、过期或无法写入的缓存不会阻止正常搜索。
 
+程序首屏显示后，会在后台依次预加载分类、模组 / 整合包 / 光影 / 材质包第一页，以及每栏最多 6 个图标。已有有效缓存直接复用；切换到正在预加载的栏目时共用同一次请求。预加载不改变当前筛选和页面，安装或准备计划时暂停后续请求，关闭窗口时取消；失败后仍可正常重试。它只准备浏览数据，不会自动下载游戏、模组文件或 Java。
+
 ## 下载来源
 
 | 内容 | 来源 |
 | --- | --- |
 | Minecraft 客户端、支持库和资源 | Mojang 官方 / BMCLAPI |
 | Fabric | Fabric 官方接口与 Maven |
+| Quilt / Legacy Fabric | 对应官方 Meta 与 Maven |
+| Forge / NeoForge | BMCLAPI 版本索引，HMCL 引擎按来源设置获取安装器与依赖 |
+| OptiFine / LiteLoader | BMCLAPI 及 HMCL 引擎的兼容分发接口 |
 | 模组、整合包、光影、材质包 | Modrinth |
 | Java | Eclipse Adoptium Temurin 官方分发 |
+| MineDock 更新 | 本仓库 GitHub Releases |
 
 游戏来源可选择自动、官方或 BMCLAPI。自动模式对支持的 Mojang 下载域名优先使用 BMCLAPI，失败后回退官方；锁定来源时不会自动切换。其他服务保留各自的官方分发来源。
 
 ## 当前范围
 
-当前是第一阶段版本。Forge、NeoForge、Quilt、QSL、Legacy Fabric、OptiFine 的完整安装，以及整合包 `.mrpack` 自动安装和游戏目录 ZIP 导入 / 解包，**尚未实现**。整合包页面目前支持搜索、筛选和原始文件下载。
+整合包 `.mrpack` 自动安装和游戏目录 ZIP 导入 / 解包**尚未实现**。整合包页面目前支持搜索、筛选和原始文件下载。加载器列表涵盖上述七类，不表示每个历史构建仍可从上游下载，也不保证任意加载器组合兼容。
 
 账号登录、游戏实际启动、模组启停和卸载仍由启动器处理；MineDock 提供打开启动器的入口。兼容性检查依据游戏版本、加载器、声明依赖及已知冲突，不能保证排除所有运行时冲突。
 
 ## 数据与校验
 
 - 设置、历史、下载缓存、计划和事务日志位于 `%LOCALAPPDATA%\MineDock`。
-- 下载完成并通过上游哈希校验后，才会提交文件到目标目录。
+- MineDock 计划中的远程文件通过上游哈希校验后才提交；HMCL 按其引擎规则校验加载器依赖，生成文件另以本地 SHA-256 校验后提交。本地校验用于防止暂存文件变化，不等同于上游签名。
 - 覆盖已有文件前会备份；失败、取消或异常退出后可回滚或恢复，并保护外部程序修改过的文件。
 - 游戏、模组、整合包和 Java 不随本程序分发，由用户执行下载时从对应上游获取。内置的 PCL / HMCL 是独立的原版启动器，保留各自许可。
 
@@ -136,6 +160,8 @@ dotnet publish .\MineDock.App\MineDock.App.csproj -c Release -p:PublishProfile=S
 在线检查可在检查命令最后加 `--live`；`--live --install` 会下载约 1 GB，并在指定测试目录实际安装 Minecraft 1.21.1、Fabric、Fabric API 和 Java 21。`--live --mirror` 可单独检查 BMCLAPI。
 
 `MineDock.UiChecks` 在独立应用数据目录运行实际 WPF 分页、文字边界、悬停与选中反馈、列表缓存和启动器关联 / 安装检查；加 `--live` 可验证四个 Modrinth 栏目的真实翻页与末页访问，并生成明暗主题及最小窗口截图。
+
+`dotnet run --project .\MineDock.UiChecks -c Release -- .\check-output-loaders --loader-install` 实际下载并安装七类加载器的代表版本，同时验证旧 Forge 和 NeoForge 1.20.1；包含真实客户端与支持库，为避免重复下载省略共享游戏资源。引擎需要可发现的 JDK 21+，否则自动下载。
 
 诊断截图：`MineDock.exe --capture <绝对输出目录>`。可设置 `MINEDOCK_DATA` 环境变量，将诊断数据与日常使用的设置分开。
 

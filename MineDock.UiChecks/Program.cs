@@ -28,7 +28,7 @@ internal static class Program
         Folder = Path.GetFullPath(args.FirstOrDefault(a => !a.StartsWith("--")) ?? "check-output-ui");
         Directory.CreateDirectory(Folder);
         Environment.SetEnvironmentVariable("MINEDOCK_DATA", Path.Combine(Folder, "state"));
-        var app = new App();
+        var app = new App(false);
         app.InitializeComponent();
         App.ApplyTheme("Dark");
         var window = CreateWindow();
@@ -36,8 +36,33 @@ internal static class Program
         {
             try
             {
+                var updateArgument=Array.IndexOf(args,"--update-exe");
+                if(updateArgument>=0)
+                {
+                    await UpdateSmokeChecks.Run(Folder,Path.GetFullPath(args[updateArgument+1]),
+                        Path.GetFullPath(args[updateArgument+2]),Check);
+                    return;
+                }
+                if (args.Contains("--loader-install"))
+                {
+                    await LoaderInstallChecks.Run(Folder, Check, args);
+                    return;
+                }
+                if (args.Contains("--capture-loader"))
+                {
+                    await LoaderFeatureChecks.CaptureLive(window, Folder, Check);
+                    return;
+                }
+                if (args.Contains("--interface"))
+                {
+                    await InterfaceFeatureChecks.Run(CreateWindow, Folder, Check);
+                    return;
+                }
                 await Verify(window);
                 await CatalogFeatureChecks.Run(CreateWindow, Folder, Check);
+                await LoaderFeatureChecks.Run(CreateWindow, Folder, Check);
+                await BackgroundFeatureChecks.Run(CreateWindow, Folder, Check);
+                await InterfaceFeatureChecks.Run(CreateWindow, Folder, Check);
                 if (args.Contains("--live"))
                 {
                     new Settings().Save();
@@ -227,16 +252,16 @@ internal static class Program
         double Lift() => ((TranslateTransform)surface.RenderTransform).Y;
         double Shadow() => ((System.Windows.Media.Effects.DropShadowEffect)shadowSurface.Effect).Opacity;
         VisualStateManager.GoToState(button, "MouseOver", true);
-        await Task.Delay(180);
+        await Until(() => Lift() < 0 && Shadow() > 0);
         Check(Lift() < 0 && Shadow() > 0, "Button hover lifts its surface and reveals a soft shadow");
         var hit = button.InputHitTest(new Point(button.ActualWidth / 2, button.ActualHeight - .25)) as DependencyObject;
         Check(hit is not null && (hit == button || button.IsAncestorOf(hit)),
             "Raised buttons retain a stable hit target at their lower edge");
         VisualStateManager.GoToState(button, "Pressed", true);
-        await Task.Delay(180);
+        await Until(() => Lift() > 0 && Shadow() < .2);
         Check(Lift() > 0 && Shadow() < .2, "Pressed buttons settle without changing layout dimensions");
         VisualStateManager.GoToState(button, "Normal", true);
-        await Task.Delay(180);
+        await Until(() => Lift() == 0 && Shadow() == 0);
         Check(Lift() == 0 && Shadow() == 0, "Button elevation returns completely to rest");
         var nav = Named<RadioButton>(window, "NavMod");
         var navLift = (TranslateTransform)((Grid)nav.Template.FindName("NavVisual", nav)).RenderTransform;

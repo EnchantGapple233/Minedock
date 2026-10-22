@@ -1,0 +1,13 @@
+{
+  "Passed": 5,
+  "Checks": [
+    "Published single EXE helper replaces an older executable and starts the new window",
+    "Actual updater replacement matches the v0.1.4 binary and file version",
+    "Successful startup acknowledges readiness and cleans the temporary backup",
+    "A candidate that cannot start reports update failure",
+    "A failed new executable restores the exact previous working program"
+  ],
+  "Live": false,
+  "DpiScale": 1.5,
+  "ExitCode": 0
+}

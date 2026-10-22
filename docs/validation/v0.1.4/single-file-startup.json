@@ -1,0 +1,47 @@
+{
+  "Date": "2026-10-22T20:52:15.4601738+08:00",
+  "ExecutableSha256": "794a83930db4d8de85462af63346dcbef7e5c884db7088a66a8ba6d859c99723",
+  "FileVersion": "0.1.4.0",
+  "ProcessId": 26360,
+  "MainWindow": 591750,
+  "DistributionContainsOnlyExe": true,
+  "RuntimeExtracted": true,
+  "DotnetRootRemovedBeforeLaunch": true,
+  "FreshDataDirectory": true,
+  "AutomaticUpdatesDisabledForIsolatedPreview": true,
+  "DownloadSource": "Auto (mirror with official fallback)",
+  "StartupPreloads": [
+    {
+      "Section": "mod",
+      "Rows": 30,
+      "Page": 1,
+      "FetchedAt": "2026-10-22T20:52:12.9790801+08:00",
+      "Bytes": 35286
+    },
+    {
+      "Section": "modpack",
+      "Rows": 30,
+      "Page": 1,
+      "FetchedAt": "2026-10-22T20:52:14.0182353+08:00",
+      "Bytes": 37775
+    },
+    {
+      "Section": "shader",
+      "Rows": 30,
+      "Page": 1,
+      "FetchedAt": "2026-10-22T20:52:14.6232687+08:00",
+      "Bytes": 39060
+    },
+    {
+      "Section": "resourcepack",
+      "Rows": 30,
+      "Page": 1,
+      "FetchedAt": "2026-10-22T20:52:15.2204782+08:00",
+      "Bytes": 36888
+    }
+  ],
+  "ApplicationErrorLog": false,
+  "Inspection": "Automated process, runtime extraction, fresh first-page caches and normal-exit checks. WPF interactions are tested separately.",
+  "GitHubStatus": "Issue 1 remains open; code, tag and release are not uploaded pending maintainer confirmation.",
+  "ExitCode": 0
+}

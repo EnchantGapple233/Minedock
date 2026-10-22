@@ -13,16 +13,16 @@ public sealed class Network : IDisposable
     private static readonly SemaphoreSlim SegmentGate = new(16);
     private readonly HttpClient _client;
     public SourceMode Source { get; set; }
-    public Network()
+    public Network(HttpMessageHandler? handler = null)
     {
-        _client = new(new SocketsHttpHandler
+        _client = new(handler ?? new SocketsHttpHandler
         {
             AutomaticDecompression = DecompressionMethods.All,
             ConnectTimeout = TimeSpan.FromSeconds(15),
             PooledConnectionLifetime = TimeSpan.FromMinutes(5)
         });
         _client.Timeout = Timeout.InfiniteTimeSpan;
-        _client.DefaultRequestHeaders.UserAgent.ParseAdd("MineDock/0.1.3 (Windows desktop)");
+        _client.DefaultRequestHeaders.UserAgent.ParseAdd("MineDock/0.1.4 (Windows desktop)");
     }
     public static string? Mirror(string url)
     {

@@ -81,13 +81,17 @@ public static class PclIntegration
                     parent = node.Str("inheritsFrom");
                 }
                 var text = string.Join("\n", chain.Select(n => n.ToJsonString()));
-                var loader = text.Contains("net.fabricmc:fabric-loader", StringComparison.OrdinalIgnoreCase) ? "fabric"
+                var loader = text.Contains("net.legacyfabric:intermediary", StringComparison.OrdinalIgnoreCase) ? "legacy-fabric"
+                    : text.Contains("net.fabricmc:fabric-loader", StringComparison.OrdinalIgnoreCase) ? "fabric"
                     : text.Contains("org.quiltmc:quilt-loader", StringComparison.OrdinalIgnoreCase) ? "quilt"
                     : text.Contains("neoforge", StringComparison.OrdinalIgnoreCase) ? "neoforge"
-                    : text.Contains("net.minecraftforge", StringComparison.OrdinalIgnoreCase) ? "forge" : "vanilla";
+                    : text.Contains("net.minecraftforge", StringComparison.OrdinalIgnoreCase) ? "forge"
+                    : text.Contains("optifine", StringComparison.OrdinalIgnoreCase) ? "optifine"
+                    : text.Contains("com.mumfrey:liteloader", StringComparison.OrdinalIgnoreCase) ? "liteloader" : "vanilla";
                 var baseVersion = chain.Last();
-                var game = baseVersion.Str("clientVersion", baseVersion.Str("id", id));
-                if (baseVersion["patches"] is JsonArray patches &&
+                var game = baseVersion.Str("clientVersion", baseVersion.Str("jar", baseVersion.Str("id", id)));
+                if (data["clientVersion"] is { } clientVersion) game = clientVersion.ToString();
+                if (data["patches"] is JsonArray patches &&
                     patches.FirstOrDefault(p => p.Str("id") == "game")?.Str("version") is { Length: > 0 } patchedGame)
                     game = patchedGame;
                 var resolved = resolve(id, loader, chain.Last().Str("type", "release"));

@@ -10,22 +10,23 @@ public sealed class GameService(Network network)
     public void Invalidate() => _releases = null;
     public async Task<List<GameRelease>> Releases(CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         if (_releases is not null) return _releases;
         var root = await network.Json(ManifestUrl, ct);
-        _releases = root["versions"]!.AsArray().Where(x => x.Str("type") == "release")
-            .Select(x => new GameRelease(x.Str("id"), x.Str("url"), DateTime.Parse(x.Str("releaseTime")))).ToList();
+        ct.ThrowIfCancellationRequested();
+        _releases = root["versions"]!.AsArray()
+            .Select(x => new GameRelease(x.Str("id"), x.Str("url"), DateTime.Parse(x.Str("releaseTime")), x.Str("type"))).ToList();
         return _releases;
     }
     public async Task<JsonNode> Metadata(string version, CancellationToken ct = default)
     {
         var release = (await Releases(ct)).FirstOrDefault(x => x.Id == version)
-            ?? throw new InvalidOperationException("游戏正式版本不存在。");
+            ?? throw new InvalidOperationException("游戏版本不存在。");
         return await network.Json(release.Url, ct);
     }
     public async Task<List<LoaderRelease>> Loaders(string game, CancellationToken ct = default)
     {
-        var json = await network.Json($"https://meta.fabricmc.net/v2/versions/loader/{Uri.EscapeDataString(game)}", ct);
-        return json.AsArray().Select(x => x!["loader"]!).Select(x => new LoaderRelease(x.Str("version"), x.Bool("stable"))).ToList();
+        return await new LoaderService(network).Releases("fabric", game, ct);
     }
     public static bool Allowed(JsonNode? library)
     {
@@ -65,7 +66,7 @@ public sealed class GameService(Network network)
             var artifact = lib?["downloads"]?["artifact"];
             if (artifact is not null)
                 AddDownload(plan, artifact, JsonTools.Child(root, "libraries/" + artifact.Str("path")), lib.Str("name"));
-            else if (lib?["downloads"] is null)
+            else if (lib?["downloads"] is null && lib?["natives"] is null)
             {
                 var path = MavenPath(lib.Str("name"));
                 plan.Add(new() { Url = lib.Str("url", "https://libraries.minecraft.net/").TrimEnd('/') + "/" + path,
@@ -76,12 +77,19 @@ public sealed class GameService(Network network)
             var native = lib?["natives"]?.Str("windows").Replace("${arch}", "64");
             if (!string.IsNullOrWhiteSpace(native) && lib?["downloads"]?["classifiers"]?[native] is JsonNode file)
                 AddDownload(plan, file, JsonTools.Child(root, "libraries/" + file.Str("path")), lib.Str("name") + " native");
+            else if (!string.IsNullOrWhiteSpace(native) && lib?["downloads"] is null)
+            {
+                var path = MavenPath(lib.Str("name") + ":" + native);
+                plan.Add(new() { Url = lib.Str("url", "https://libraries.minecraft.net/").TrimEnd('/') + "/" + path,
+                    Destination = JsonTools.Child(root, "libraries/" + path), Label = lib.Str("name") + " native" });
+            }
         }
     }
     public static void AddDownload(InstallPlan plan, JsonNode data, string destination, string label)
         => plan.Add(new() { Url = data.Str("url"), Destination = destination, Size = data.Num("size"),
             Hash = data.Str("sha1"), HashAlgorithm = "SHA1", Label = label });
-    public async Task<InstallPlan> Plan(string root, string game, string? loader, string targetId, CancellationToken ct = default)
+    public async Task<InstallPlan> Plan(string root, string game, string? loader, string targetId, CancellationToken ct = default,
+        string loaderKind = "fabric")
     {
         root = Path.GetFullPath(root);
         JsonTools.SafeName(targetId);
@@ -90,7 +98,9 @@ public sealed class GameService(Network network)
             throw new InvalidOperationException("目标版本名称已经存在。请选择新名称；已有安装可从任务记录重试。");
         var metadata = await Metadata(game, ct);
         var baseId = metadata.Str("id");
-        var plan = new InstallPlan { Title = loader is null ? $"Minecraft {game}" : $"Minecraft {game} · Fabric {loader}",
+        if (loader is not null && !LoaderService.Kinds.Contains(loaderKind)) throw new InvalidOperationException("不支持的加载器。");
+        if (loader is not null && targetId == baseId) throw new InvalidOperationException("加载器版本名称必须与原版名称不同。");
+        var plan = new InstallPlan { Title = loader is null ? $"Minecraft {game}" : $"Minecraft {game} · {LoaderService.Name(loaderKind)} {loader}",
             Destination = ownFolder, TargetId = targetId, Type = "游戏" };
         var baseDirectory = JsonTools.Child(root, "versions/" + baseId);
         if (loader is null && targetId != baseId)
@@ -134,13 +144,21 @@ public sealed class GameService(Network network)
                         Hash = hash, Size = pair.Value.Num("size"), Label = pair.Key });
             }
         }
-        if (loader is not null)
+        if (loader is not null && LoaderService.IsMeta(loaderKind))
         {
-            var profile = await network.Json($"https://meta.fabricmc.net/v2/versions/loader/{Uri.EscapeDataString(game)}/{Uri.EscapeDataString(loader)}/profile/json", ct);
+            var profile = await network.Json($"{LoaderService.Meta(loaderKind)}/versions/loader/{Uri.EscapeDataString(game)}/{Uri.EscapeDataString(loader)}/profile/json", ct);
             profile["id"] = targetId;
+            profile["clientVersion"] = game;
             plan.Add(new() { Action = FileAction.Text, Destination = Path.Combine(ownFolder, targetId + ".json"),
-                Text = profile.ToJsonString(JsonTools.Options), Label = "Fabric 启动配置" });
+                Text = profile.ToJsonString(JsonTools.Options), Label = LoaderService.Name(loaderKind) + " 启动配置" });
             Libraries(plan, profile, root);
+        }
+        else if (loader is not null)
+        {
+            plan.Loader = new(root, game, loaderKind, loader, targetId);
+            plan.Loader.MinimumJava = Math.Max(21, (int)(metadata["javaVersion"]?.Num("majorVersion") ?? 8));
+            plan.Details.Add("加载器在独立临时目录安装，成功后将启动配置与支持库纳入文件事务。");
+            plan.Details.Add("加载器安装阶段还会从其分发源获取安装器与处理依赖，最终大小以实际下载为准。");
         }
         foreach (var file in plan.Files.Where(f => f.Action == FileAction.Download && f.Hash.Length == 0))
         {
@@ -150,7 +168,7 @@ public sealed class GameService(Network network)
             file.Hash = checksum;
             file.HashAlgorithm = "SHA1";
         }
-        plan.Details.Add($"游戏：{game} · {(loader is null ? "原版" : "Fabric " + loader)}");
+        plan.Details.Add($"游戏：{game} · {(loader is null ? "原版" : LoaderService.Name(loaderKind) + " " + loader)}");
         var requiredJava = metadata["javaVersion"]?.Num("majorVersion") ?? 8;
         plan.Details.Add($"Java 要求：{requiredJava}");
         plan.Details.Add("安装游戏本体、支持库及完整资源；启动器配置保持由启动器管理。");
