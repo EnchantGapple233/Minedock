@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "使用提问与交流 / Questions and discussions"
+    url: https://github.com/EnchantGapple233/Minedock/discussions/categories/q-a
+    about: "安装方法、兼容性、网络连接与一般交流 / Usage, compatibility, connectivity, and general discussion"
+  - name: "私密安全报告 / Private security report"
+    url: https://github.com/EnchantGapple233/Minedock/security/advisories/new
+    about: "请勿在公开 Issue 中披露漏洞 / Do not disclose vulnerabilities in public issues"

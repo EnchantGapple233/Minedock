@@ -1,0 +1,19 @@
+{
+  "verifiedAt": "2026-10-23T10:55:51.391Z",
+  "markdownFiles": 10,
+  "localLinks": 75,
+  "yamlFiles": 4,
+  "readmes": [
+    {
+      "file": "README.md",
+      "lines": 52,
+      "bytes": 3452
+    },
+    {
+      "file": "README.en.md",
+      "lines": 52,
+      "bytes": 3812
+    }
+  ],
+  "actionsPinned": true
+}

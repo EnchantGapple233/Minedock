@@ -1,0 +1,82 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+
+jobs:
+  build:
+    name: Build, regression checks, and single EXE
+    runs-on: windows-2025
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.402'
+          cache: true
+          cache-dependency-path: MineDock.App/packages.lock.json
+
+      # The committed lock file describes this publish graph. A regular
+      # solution build restores a different graph, so publish it first.
+      - name: Publish the locked self-contained single EXE
+        run: dotnet publish MineDock.App/MineDock.App.csproj -c Release -p:PublishProfile=SingleFile -p:RestoreLockedMode=true -o artifacts/single-file
+
+      - name: Verify the distribution and write its checksum
+        run: ./.github/scripts/verify-single-file.ps1 -PublishDirectory artifacts/single-file
+
+      - name: Build the solution
+        run: dotnet build MineDock.slnx -c Release
+
+      - name: Run core regression checks
+        run: dotnet run --project MineDock.Checks -c Release --no-build -- artifacts/checks/core
+
+      - name: Run full WPF regression checks
+        run: dotnet run --project MineDock.UiChecks -c Release --no-build -- artifacts/checks/ui
+
+      - name: Upload the verified application
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: MineDock-win-x64-${{ github.sha }}
+          path: |
+            artifacts/single-file/MineDock.exe
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload regression reports and screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: MineDock-checks-${{ github.sha }}
+          path: |
+            artifacts/checks/core/results.json
+            artifacts/checks/ui/results.json
+            artifacts/checks/ui/background-checks.json
+            artifacts/checks/ui/failure.txt
+            artifacts/checks/ui/*.png
+          if-no-files-found: warn
+          retention-days: 14

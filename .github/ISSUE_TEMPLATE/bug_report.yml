@@ -1,0 +1,87 @@
+name: "错误报告 / Bug report"
+description: "报告可复现的程序故障 / Report a reproducible application defect"
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        使用疑问请到 [Discussions](https://github.com/EnchantGapple233/Minedock/discussions)，安全漏洞请[私密报告](https://github.com/EnchantGapple233/Minedock/security/advisories/new)。
+        For usage questions, use Discussions. Report security vulnerabilities privately.
+        请使用中文或英文，提交前移除账号、令牌、私密链接和个人路径。
+        Chinese or English is welcome. Remove accounts, tokens, private URLs, and personal paths.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "提交前检查 / Before submitting"
+      options:
+        - label: "我已搜索已有 Issue 和 Discussions / I searched existing issues and discussions"
+          required: true
+        - label: "这不是公开的安全漏洞报告 / This is not a public vulnerability report"
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: "MineDock 版本 / Version"
+      placeholder: "例如 / e.g. 0.1.4"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: "Windows 版本及架构 / Windows version and architecture"
+      placeholder: "例如 / e.g. Windows 11 24H2 x64"
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: "问题位置 / Affected area"
+      options:
+        - "游戏与加载器 / Game and loaders"
+        - "Modrinth 资源 / Modrinth content"
+        - "启动器关联 / Launcher association"
+        - "Java"
+        - "下载与安装 / Downloads and installation"
+        - "自动更新 / Automatic updates"
+        - "界面与背景 / Interface and backgrounds"
+        - "其他 / Other"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: "游戏、加载器、启动器及来源 / Game, loader, launcher, and source"
+      description: "填写相关版本和自动 / 官方 / BMCLAPI 来源；不相关时写 N/A。Include relevant versions and Auto / Official / BMCLAPI; use N/A if unrelated."
+      placeholder: "Minecraft 1.21.1; Forge 52.1.20; HMCL 3.16.4; 官方 / Official"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "复现步骤 / Steps to reproduce"
+      placeholder: |
+        1. 打开哪个页面 / Open which page
+        2. 选择哪些条件 / Select which options
+        3. 执行什么操作 / Perform which action
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "预期行为 / Expected behavior"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: "实际行为与错误信息 / Actual behavior and errors"
+      description: "可以附截图。You may attach screenshots."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: "已脱敏的日志 / Redacted logs"
+      description: "可选。应用数据在 %LOCALAPPDATA%\\MineDock，加载器日志在 loader-logs，更新记录在 updates。Optional; include only relevant, redacted excerpts."
+      render: text
